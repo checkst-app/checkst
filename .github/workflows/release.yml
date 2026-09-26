@@ -134,14 +134,18 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
-        if: env.HAS_KEY == 'true'
-
-      - name: Install NDK
+      # The runner image ships the Android SDK (ANDROID_HOME); only the NDK version may be missing.
+      - name: Android NDK
         if: env.HAS_KEY == 'true'
         run: |
-          sdkmanager --install "ndk;28.2.13676358" > /dev/null
-          echo "NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          sdkm="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$sdkm" ] || sdkm=$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)
+          if yes | "$sdkm" --install "ndk;28.2.13676358" > /dev/null && [ -d "$ANDROID_HOME/ndk/28.2.13676358" ]; then
+            echo "NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          else
+            echo "::warning::NDK 28.2 nicht installierbar, nutze $ANDROID_NDK_LATEST_HOME"
+            echo "NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+          fi
 
       - uses: dtolnay/rust-toolchain@stable
         if: env.HAS_KEY == 'true'
