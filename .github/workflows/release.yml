@@ -100,10 +100,13 @@ jobs:
           name: checkst-${{ env.VERSION }}
           path: build/releases/*
 
+      # A pushed tag already exists, so no target is passed (GITHUB_TOKEN may not create a release
+      # at a commit SHA that is no longer a branch tip). A manual run creates the tag on its branch.
       - name: Publish GitHub release
         shell: pwsh
         run: |
-          vpk upload github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} -o build/releases --publish --releaseName "checkst $env:VERSION" --tag "v$env:VERSION" --targetCommitish ${{ github.sha }}
+          $target = if ("${{ github.event_name }}" -eq "workflow_dispatch") { @("--targetCommitish", "${{ github.ref_name }}") } else { @() }
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} -o build/releases --publish --releaseName "checkst $env:VERSION" --tag "v$env:VERSION" @target
           if ($LASTEXITCODE -ne 0) { throw "vpk upload fehlgeschlagen" }
 
   android:
