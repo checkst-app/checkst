@@ -79,7 +79,7 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
       <button type="button" role="radio" data-theme-choice="dark" aria-label="${esc(t.theme.dark)}">${icon("moon", 15)}<span>${esc(t.theme.dark)}</span></button>
     </div>
     <a class="btn btn-outline btn-sm hide-sm" href="${repoUrl}">${githubMark(16)}GitHub</a>
-    <a class="btn btn-accent btn-sm" href="#download">${icon("download", 16)}${esc(t.nav.download)}</a>
+    <a class="btn btn-accent btn-sm nav-download" href="#download" aria-label="${esc(t.nav.download)}">${icon("download", 16)}<span>${esc(t.nav.download)}</span></a>
   </div>
 </header>
 
