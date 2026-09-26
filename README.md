@@ -1,96 +1,100 @@
 # checkst
 
-Die ruhige To-do-App für Windows auf Basis von [todo.txt](https://github.com/todotxt/todo.txt).
-Deine Aufgaben liegen in einer einfachen Textdatei, lokal, offen und in jedem Editor lesbar.
+**English** · [Deutsch](README.de.md)
 
-## Funktionen
+The calm to-do app for Windows, built on [todo.txt](https://github.com/todotxt/todo.txt).
+Your tasks live in a plain text file: local, open and readable in any editor.
 
-- **todo.txt-Schreibweise**: `(A)` Priorität, `+Projekt`, `@Kontext`, `due:JJJJ-MM-TT`, farbig hervorgehoben
-- **Schnelleingabe** mit Vorschlägen für Projekte, Kontexte und Fälligkeiten (`Tab` übernimmt)
-- **Schnellerfassung** über jeder Anwendung mit `Strg+Alt+T` (frei wählbar)
-- Ansichten: Alle, Heute, Anstehend, Priorität A, Erledigt, pro Projekt und Kontext
-- Gruppieren nach Datum, Projekt oder Priorität, Sortieren, Filtern, Suche
-- **Archiv** in `done.txt`, tägliche Sicherung in `.checkst-backup`, erkennt Änderungen von außen (Dropbox, OneDrive, Editor)
-- Hell, Dunkel oder wie Windows, sechs Akzentfarben, drei Dichten
-- Deutsch und Englisch, Datums- und Zeitformate einstellbar
-- Startet auf Wunsch mit Windows im Infobereich
-- **Automatische Updates** über GitHub Releases mit [Velopack](https://velopack.io)
+Website: [checkst.regbr.de](https://checkst.regbr.de/en/)
 
-Die Datei bleibt immer gültiges todo.txt: checkst schreibt nur Zeilen um, die du änderst,
-behält Zeilenenden (CRLF/LF) und BOM bei und speichert atomar.
+## Features
 
-## Entwicklung
+- **todo.txt syntax**: `(A)` priority, `+project`, `@context`, `due:YYYY-MM-DD`, highlighted as you type
+- **Quick entry** with suggestions for projects, contexts and due dates (`Tab` accepts)
+- **Quick capture** on top of any app with `Ctrl+Alt+T` (configurable)
+- Views: All, Today, Upcoming, Priority A, Done, per project and per context
+- Group by date, project or priority, sort, filter, search
+- **Archive** to `done.txt`, daily backup in `.checkst-backup`, picks up changes made elsewhere (Dropbox, OneDrive, an editor)
+- Light, dark or follow Windows, six accent colors, three densities
+- English and German, configurable date and time formats
+- Optionally starts with Windows in the notification area
+- **Automatic updates** from GitHub Releases via [Velopack](https://velopack.io)
 
-Voraussetzungen: Node.js 22+, Rust (stable, MSVC), Visual Studio Build Tools mit C++-Workload, WebView2.
+The file always stays valid todo.txt: checkst only rewrites the lines you change,
+keeps line endings (CRLF/LF) and the BOM, and saves atomically.
+
+## Development
+
+Requirements: Node.js 22+, Rust (stable, MSVC), Visual Studio Build Tools with the C++ workload, WebView2.
 
 ```powershell
 npm install
-npm run tauri dev      # App mit Hot-Reload starten
-npm test               # Parser-Tests (Vitest)
-cd src-tauri; cargo test   # Rust-Tests (Dateizugriff)
+npm run tauri dev          # start the app with hot reload
+npm test                   # parser tests (Vitest)
+cd src-tauri; cargo test   # Rust tests (file access)
 ```
 
-Aufbau:
+Layout:
 
-| Pfad | Inhalt |
+| Path | Contents |
 | --- | --- |
-| `src/lib/todo.ts` | todo.txt-Parser und -Serializer |
-| `src/lib/store.tsx` | Laden, Speichern, Archiv, Überwachung |
-| `src/views/` | Hauptansicht, Dialog, Einstellungen, Einrichtung, Schnellerfassung |
-| `src/styles/` | Design-Tokens (hell/dunkel) und Styles aus den Pencil-Designs |
-| `src-tauri/src/` | Rust: Dateien, Überwachung, Infobereich, Kürzel, Updates |
-| `website/` | Landingpage für [checkst.regbr.de](https://checkst.regbr.de) (GitHub Pages) |
-| `design/` | Referenz-Screenshots der Designs und Beispieldaten |
+| `src/lib/todo.ts` | todo.txt parser and serializer |
+| `src/lib/store.tsx` | loading, saving, archive, file watching |
+| `src/views/` | main view, task dialog, settings, setup, quick capture |
+| `src/styles/` | design tokens (light/dark) and styles from the Pencil designs |
+| `src-tauri/src/` | Rust: files, watching, notification area, shortcuts, updates |
+| `website/` | landing page for [checkst.regbr.de](https://checkst.regbr.de) (GitHub Pages) |
+| `design/` | reference screenshots of the designs and sample data |
 
-## Releases und Updates
+## Releases and updates
 
-Ein Release ist ein Tag. GitHub Actions (`.github/workflows/release.yml`) übernimmt den Rest:
+A release is a tag. GitHub Actions (`.github/workflows/release.yml`) does the rest:
 
 ```powershell
 git tag v0.2.0
 git push origin v0.2.0
 ```
 
-1. Version aus dem Tag setzen, Tests laufen lassen, `checkst.exe` bauen
-2. Mit [Velopack](https://velopack.io) packen: `checkst-win-Setup.exe`, `checkst-win-Portable.zip`,
-   Voll- und Delta-Pakete, `releases.win.json`. Die Versionshinweise kommen aus den Commits seit dem letzten Tag.
-3. Als GitHub-Release veröffentlichen
-4. Website neu bauen (Version, Datum und Downloadgröße aktualisieren sich)
+1. Set the version from the tag, run the tests, build `checkst.exe`
+2. Package it with [Velopack](https://velopack.io): `checkst-win-Setup.exe`, `checkst-win-Portable.zip`,
+   full and delta packages, `releases.win.json`. The release notes are the commits since the previous tag.
+3. Publish a GitHub release
+4. Rebuild the website (version, date and download size update themselves)
 
-Alternativ im Tab *Actions → Release → Run workflow* mit einer Versionsnummer starten.
+Alternatively start it from *Actions → Release → Run workflow* with a version number.
 
-Die App sucht Updates unter `https://github.com/checkst-app/checkst/releases/latest/download`
-(`UPDATE_URL` in `src-tauri/src/updater.rs`). Installierte Versionen prüfen beim Start und alle
-6 Stunden, laden Updates im Hintergrund und installieren sie beim nächsten Neustart. In
-*Einstellungen → Über checkst* lässt sich das abschalten oder manuell auslösen.
+The app looks for updates at `https://github.com/checkst-app/checkst/releases/latest/download`
+(`UPDATE_URL` in `src-tauri/src/updater.rs`). Installed versions check on startup and every
+6 hours, download updates in the background and install them on the next restart. This can be
+turned off or triggered manually in *Settings → About checkst*.
 
-Lokal bauen (ohne Veröffentlichung): `npm run release -- -Version 0.2.0` → `build\releases\`.
+Build locally (without publishing): `npm run release -- -Version 0.2.0` → `build\releases\`.
 
 ## Website
 
-`website/` ist eine statische Seite ohne Framework: `index.html` (Deutsch) und `en/index.html`
-(Englisch), Hell/Dunkel/Auto, selbst gehostete Schriften (keine Anfragen an Google), kein Tracking.
+`website/` is a static site without a framework: `index.html` (German) and `en/index.html`
+(English), light/dark/auto, self-hosted fonts (no requests to Google), no tracking.
 
 ```powershell
-npm run site:build     # nach website/dist bauen (liest Repo- und Release-Daten von GitHub)
-npm run site:preview   # http://localhost:4173, ?theme=light|dark erzwingt ein Farbschema
+npm run site:build     # build to website/dist (reads repo and release data from GitHub)
+npm run site:preview   # http://localhost:4173, ?theme=light|dark forces a color scheme
 ```
 
-Beim Bauen liest `website/build.mjs` aus der GitHub-API: Beschreibung, Topics und Lizenz des
-Repos (Repo-Karte), die neueste Version mit Datum und Versionshinweisen (Download-Bereich) und die
-Größe des Installers (Hero). Die Download-Buttons zeigen auf
-`releases/latest/download/checkst-win-Setup.exe` und bleiben damit immer aktuell.
+At build time `website/build.mjs` reads from the GitHub API: the repo's description, topics and
+license (repo card), the latest version with date and release notes (download section) and the
+installer size (hero). The download buttons point to
+`releases/latest/download/checkst-win-Setup.exe`, so they always stay current.
 
-`.github/workflows/pages.yml` veröffentlicht die Seite bei Änderungen an `website/`, nach jedem
-Release und einmal täglich. Einstellungen stehen in `website/site.config.json` (Domain, Repo,
-winget-Paket, Links zu Impressum und Datenschutz).
+`.github/workflows/pages.yml` publishes the site on changes to `website/`, after every release
+and once a day. Settings live in `website/site.config.json` (domain, repo, winget package, links
+to the legal notice and privacy policy).
 
-**Einmalig einrichten:**
+**One-time setup:**
 
-1. *Settings → Pages → Build and deployment → Source:* „GitHub Actions“
-2. *Settings → Pages → Custom domain:* `checkst.regbr.de`, danach „Enforce HTTPS“
-3. DNS bei regbr.de: `CNAME checkst → checkst-app.github.io`
+1. *Settings → Pages → Build and deployment → Source:* "GitHub Actions"
+2. *Settings → Pages → Custom domain:* `checkst.regbr.de`, then "Enforce HTTPS"
+3. DNS at regbr.de: `CNAME checkst → checkst-app.github.io`
 
-## Lizenz
+## License
 
 MIT
