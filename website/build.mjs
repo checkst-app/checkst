@@ -126,7 +126,10 @@ const themeBoot = (redirect) =>
     "if(q==='light'||q==='dark'||q==='auto')localStorage.setItem('checkst-theme',q);",
     "var c=localStorage.getItem('checkst-theme')||'auto';",
     "var d=c==='dark'||(c==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);",
-    "r.dataset.theme=d?'dark':'light'}catch(e){}})();",
+    "r.dataset.theme=d?'dark':'light'}catch(e){}",
+    // Entrance and scroll animations; content stays visible if site.js never runs.
+    "if(!matchMedia('(prefers-reduced-motion: reduce)').matches){r.classList.add('motion');",
+    "setTimeout(function(){if(!window.__checkstMotion)r.classList.remove('motion')},2500)}})();",
   ].join("");
 
 async function main() {

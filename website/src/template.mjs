@@ -4,7 +4,7 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 const fill = (s, vars) => s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
 
 export function mark(size, { c = "currentColor", check, weight = 12, cls = "" } = {}) {
-  return `<svg class="mark ${cls}" width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="${weight}" aria-hidden="true"><path d="M70 15.36 A40 40 0 1 0 70 84.64" stroke="${c}"/><path d="M32 50 l16 16 42 -40" stroke="${check ?? c}"/></svg>`;
+  return `<svg class="mark ${cls}" width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="${weight}" aria-hidden="true"><path d="M70 15.36 A40 40 0 1 0 70 84.64" stroke="${c}" pathLength="100"/><path d="M32 50 l16 16 42 -40" stroke="${check ?? c}" pathLength="100"/></svg>`;
 }
 
 const windowsLogo = (size) =>
@@ -99,13 +99,13 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
   </div>
 </section>
 
-<section class="compat" aria-label="${esc(t.compat.label)}">
+<section class="compat" data-reveal aria-label="${esc(t.compat.label)}">
   <span class="compat-label">${esc(t.compat.label)}</span>
   ${["cloud", "box", "git-branch", "refresh-cw", "file-text"].map((ic, i) => `<span class="compat-item">${icon(ic, 18)}${esc(t.compat.items[i])}</span>`).join("\n  ")}
 </section>
 
 <section class="features" id="funktionen">
-  <div class="section-head">
+  <div class="section-head" data-reveal>
     <div>
       <p class="eyebrow">${esc(features.eyebrow)}</p>
       <h2>${esc(features.title)}</h2>
@@ -114,7 +114,7 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
   </div>
 
   <div class="grid-row row-1">
-    <article class="card card-syntax">
+    <article class="card card-syntax" data-reveal>
       <div class="card-text"><h3>${esc(features.syntaxTitle)}</h3><p>${esc(features.syntaxText)}</p></div>
       <div class="syntax-demo">
         <code class="raw-line">${esc(features.syntaxRaw)}</code>
@@ -128,7 +128,7 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
       </div>
     </article>
 
-    <article class="card card-quick">
+    <article class="card card-quick" data-reveal style="--i:1">
       <div class="card-text"><h3>${esc(features.quickTitle)}</h3><p>${esc(features.quickText)}</p></div>
       <div class="keys">${features.keys.map(key).join('<span class="plus">+</span>')}</div>
       <div class="quick-bar" data-theme="dark">
@@ -146,20 +146,20 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
   </div>
 
   <div class="grid-row row-2">
-    <article class="card card-small">
+    <article class="card card-small" data-reveal>
       <div class="suggest-demo">
         <div class="sd-input">${esc(features.suggestInput)}<b>+We</b></div>
         ${features.suggestRows.map(([p, c], i) => `<div class="sd-row ${i === 0 ? "active" : ""}">${icon("hash", 14)}<span>${esc(p)}</span><small>${esc(c)}</small></div>`).join("")}
       </div>
       <div class="card-text"><h3>${esc(features.suggestTitle)}</h3><p>${esc(features.suggestText)}</p></div>
     </article>
-    <article class="card card-small">
+    <article class="card card-small" data-reveal style="--i:1">
       <div class="theme-demo" aria-hidden="true">
         ${["light", "dark"].map((m) => `<div class="td td-${m}">${[70, 54, 62].map((w, i) => `<div class="td-row"><span class="td-box ${i === 0 ? "on" : ""}"></span><span class="td-line" style="width:${w}px"></span></div>`).join("")}</div>`).join("")}
       </div>
       <div class="card-text"><h3>${esc(features.themeTitle)}</h3><p>${esc(features.themeText)}</p></div>
     </article>
-    <article class="card card-small">
+    <article class="card card-small" data-reveal style="--i:2">
       <div class="lang-demo">
         ${features.langSamples.map(([code, a, b], i) => `<div class="ld-row ${i === 0 ? "active" : ""}"><span class="ld-code">${code}</span><span><b>${esc(a)}</b><small>${esc(b)}</small></span></div>`).join("")}
       </div>
@@ -168,12 +168,12 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
   </div>
 
   <div class="grid-row row-3">
-    ${features.small.map(([ic, h, d]) => `<div class="mini-feature"><span class="icon-box">${icon(ic, 19)}</span><b>${esc(h)}</b><p>${esc(d)}</p></div>`).join("\n    ")}
+    ${features.small.map(([ic, h, d], i) => `<div class="mini-feature" data-reveal style="--i:${i}"><span class="icon-box">${icon(ic, 19)}</span><b>${esc(h)}</b><p>${esc(d)}</p></div>`).join("\n    ")}
   </div>
 </section>
 
 <section class="todotxt" id="todotxt" data-theme="dark">
-  <div class="todotxt-text">
+  <div class="todotxt-text" data-reveal>
     <p class="eyebrow">${esc(t.todotxt.eyebrow)}</p>
     <h2>${esc(t.todotxt.title)}</h2>
     <p class="lead">${esc(t.todotxt.text)}</p>
@@ -181,17 +181,17 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
       ${t.todotxt.points.map(([ic, h, d]) => `<li><span class="icon-box">${icon(ic, 17)}</span><span><b>${esc(h)}</b><span>${esc(d)}</span></span></li>`).join("\n      ")}
     </ul>
   </div>
-  <div class="editor" aria-label="todo.txt">
+  <div class="editor" data-reveal style="--i:1" aria-label="todo.txt">
     <div class="editor-bar">${icon("file-text", 14)}<span>${esc(t.todotxt.editorTitle)}</span><span class="spacer"></span><code>UTF-8</code></div>
     <ol class="editor-lines">
-      ${t.todotxt.lines.map((line) => `<li>${line.map(([txt, cls]) => `<span class="tok-${cls}">${esc(txt)}</span>`).join("")}</li>`).join("\n      ")}
-      <li class="cursor-line"><span class="cursor"></span></li>
+      ${t.todotxt.lines.map((line, i) => `<li style="--i:${i}">${line.map(([txt, cls]) => `<span class="tok-${cls}">${esc(txt)}</span>`).join("")}</li>`).join("\n      ")}
+      <li class="cursor-line" style="--i:${t.todotxt.lines.length}"><span class="cursor"></span></li>
     </ol>
   </div>
 </section>
 
 <section class="open-source" id="open-source">
-  <div class="os-text">
+  <div class="os-text" data-reveal>
     <p class="eyebrow">${esc(t.openSource.eyebrow)}</p>
     <h2>${esc(t.openSource.title)}</h2>
     <p class="lead">${esc(t.openSource.text)}</p>
@@ -200,7 +200,7 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
       <a class="btn btn-quiet" href="${repoUrl}/issues/new">${icon("bug", 18)}${esc(t.openSource.bugButton)}</a>
     </div>
   </div>
-  <div class="repo-card">
+  <div class="repo-card" data-reveal style="--i:1">
     <div class="repo-head">
       <a class="repo-name" href="${repoUrl}">${icon("book-marked", 18)}<span class="owner">${esc(data.repo.owner)} /</span><b>${esc(data.repo.name)}</b><span class="public">Public</span></a>
       <p>${esc(data.repo.description || t.openSource.description)}</p>
@@ -219,7 +219,7 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
 </section>
 
 <section class="download" id="download">
-  <div class="download-box">
+  <div class="download-box" data-reveal>
     <span class="download-icon">${mark(54, { c: "#FFFFFF", check: "#BFEBD6", weight: 12 })}</span>
     <h2>${esc(t.download.title)}</h2>
     <p class="lead">${esc(t.download.text)}</p>
@@ -251,9 +251,9 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
 </section>
 
 <section class="faq" id="faq">
-  <div class="faq-head"><p class="eyebrow">${esc(t.faq.eyebrow)}</p><h2>${esc(t.faq.title)}</h2></div>
+  <div class="faq-head" data-reveal><p class="eyebrow">${esc(t.faq.eyebrow)}</p><h2>${esc(t.faq.title)}</h2></div>
   <div class="faq-list">
-    ${t.faq.items.map(([q, a]) => `<details open><summary>${esc(q)}${icon("minus", 18)}${icon("plus", 18)}</summary><p>${esc(a)}</p></details>`).join("\n    ")}
+    ${t.faq.items.map(([q, a], i) => `<details open data-reveal style="--i:${i}"><summary>${esc(q)}${icon("minus", 18)}${icon("plus", 18)}</summary><p>${esc(a)}</p></details>`).join("\n    ")}
   </div>
 </section>
 </main>
