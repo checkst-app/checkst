@@ -1,0 +1,20 @@
+(A) 2026-09-10 Grundsteuerbescheid prüfen und Einspruch vorbereiten +Steuer2026 @büro due:2026-09-22
+(B) 2026-09-12 Hausverwaltung wegen Übergabetermin anrufen +Umzug @telefon due:2026-09-23
+2026-09-14 Rasen vertikutieren und nachsäen +Garten @zuhause due:2026-09-24
+(A) 2026-09-21 Neue Texte für die Startseite ins CMS übernehmen +Website @büro due:2026-09-26
+(B) 2026-09-20 Umzugskartons und Klebeband besorgen +Umzug @einkauf due:2026-09-26
+(C) 2026-09-18 Belege für Handwerkerleistungen scannen +Steuer2026 @zuhause due:2026-09-26
+(B) 2026-09-19 Kontaktformular auf Spam-Schutz testen +Website @büro due:2026-09-28
+2026-09-19 Nachsendeauftrag bei der Post einrichten +Umzug due:2026-10-01
+(C) 2026-09-15 Termin mit der Steuerberaterin vereinbaren +Steuer2026 @telefon due:2026-10-06
+(A) 2026-09-22 Relaunch-Konzept an Kundin schicken +Website @büro due:2026-10-02
+2026-09-23 Sensor der Wetterstation kalibrieren +Wetterstation @zuhause due:2026-10-09
+2026-09-24 Hosting-Vertrag kündigen +Website due:2026-09-30
+Tomaten zurückschneiden +Garten @zuhause
+Milch, Brot und Kaffee kaufen @einkauf
+Zahnarzttermin vereinbaren @telefon
+Newsletter-Texte korrigieren +Website @büro due:2026-10-04
+Kaution zurückfordern +Umzug @telefon
+x 2026-09-24 2026-09-20 Zahnarzt anrufen @telefon
+x 2026-09-25 Blumenerde besorgen @einkauf
+x 2026-09-25 Wetterdaten exportieren +Wetterstation

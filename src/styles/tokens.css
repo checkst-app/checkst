@@ -1,0 +1,79 @@
+/* Design tokens, taken 1:1 from the pencil design variables (light / dark). */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f5f5f3;
+  --surface: #ffffff;
+  --surface-muted: #efefec;
+  --surface-hover: #e8e8e4;
+  --border: #e3e3df;
+  --border-strong: #cfcfca;
+  --text-primary: #1a1a19;
+  --text-secondary: #5c5c58;
+  --text-tertiary: #8a8a85;
+  --accent: #1d7657;
+  --accent-hover: #17654a;
+  --accent-soft: #e2f1ea;
+  --on-accent: #ffffff;
+  --project: #6b45c4;
+  --project-soft: #efeafb;
+  --context: #1668a3;
+  --context-soft: #e4f0f9;
+  --prio-a: #c9440e;
+  --prio-a-soft: #fbeae2;
+  --prio-b: #a87400;
+  --prio-b-soft: #faf1dc;
+  --prio-c: #3d6fb8;
+  --prio-c-soft: #e6eef9;
+  --danger: #c4314b;
+  --danger-soft: #fbe7ea;
+  --scrim: #1a1a1952;
+  --shadow-popover: 0 8px 24px #00000024, 0 1px 3px #00000010;
+  --shadow-dialog: 0 16px 48px #0000002e, 0 2px 6px #00000012;
+  --quick-bg: #fbfbfaf5;
+  --quick-stroke: #0000001a;
+  --quick-hover: var(--surface-hover);
+  --caption-close-hover: #c42b1c;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1b1b1d;
+  --surface: #252528;
+  --surface-muted: #202023;
+  --surface-hover: #2e2e32;
+  --border: #36363a;
+  --border-strong: #48484d;
+  --text-primary: #f1f1ef;
+  --text-secondary: #a9a9a5;
+  --text-tertiary: #76767a;
+  --accent: #4dc393;
+  --accent-hover: #62d1a3;
+  --accent-soft: #1c3a2e;
+  --on-accent: #0c1f17;
+  --project: #b7a1f2;
+  --project-soft: #2e2645;
+  --context: #72b8e8;
+  --context-soft: #1d3142;
+  --prio-a: #f28a5b;
+  --prio-a-soft: #3f2419;
+  --prio-b: #e6b84c;
+  --prio-b-soft: #3a301a;
+  --prio-c: #86a9e3;
+  --prio-c-soft: #1f2a3d;
+  --danger: #f17a86;
+  --danger-soft: #3d1e23;
+  --scrim: #00000080;
+  --shadow-popover: 0 8px 24px #00000066, 0 1px 3px #00000040;
+  --shadow-dialog: 0 16px 48px #00000080, 0 2px 6px #00000040;
+  --quick-bg: #1e1e21f2;
+  --quick-stroke: #ffffff1f;
+  --quick-hover: #ffffff12;
+}
+
+:root {
+  --font-ui: "Inter Variable", "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  --fs-task: 13px;
+  --row-h: 38px;
+}

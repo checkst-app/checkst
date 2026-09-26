@@ -1,0 +1,104 @@
+# Release pipeline: push a tag like v0.2.0 and GitHub Actions
+#   1. builds checkst (Tauri, Windows) with the version from the tag,
+#   2. packages it with Velopack (installer, portable zip, delta + full update packages),
+#   3. publishes a GitHub release – the app's auto-update reads
+#      https://github.com/checkst-app/checkst/releases/latest/download/releases.win.json,
+#   4. rebuilds the website so version, date and download size are up to date.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without v, e.g. 0.2.0 (creates the tag)"
+        required: true
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Version
+        shell: pwsh
+        run: |
+          $v = if ("${{ github.event_name }}" -eq "workflow_dispatch") { "${{ inputs.version }}" } else { "${{ github.ref_name }}".TrimStart("v") }
+          if ($v -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw "Ungültige Version '$v' (erwartet z. B. 0.2.0)" }
+          "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install vpk
+        run: dotnet tool install -g vpk
+
+      - run: npm ci
+
+      - name: Set app version
+        run: npm version ${{ env.VERSION }} --no-git-tag-version --allow-same-version
+
+      - run: npm test
+      - run: npm run tauri build
+
+      - name: Release notes
+        shell: pwsh
+        run: |
+          $prev = git tag --list "v*" --sort=-v:refname | Where-Object { $_ -ne "v$env:VERSION" } | Select-Object -First 1
+          $range = if ($prev) { "$prev..HEAD" } else { "HEAD" }
+          $log = git log $range --no-merges --pretty="- %s" | Select-Object -First 50
+          $notes = @("## checkst $env:VERSION", "") + ($(if ($log) { $log } else { "- Erste Version" }))
+          $notes | Out-File -Encoding utf8 build-notes.md
+          Get-Content build-notes.md
+
+      - name: Package with Velopack
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build/pack, build/releases | Out-Null
+          Copy-Item src-tauri/target/release/checkst.exe build/pack/
+          # Previous release enables delta updates; the very first release has none.
+          vpk download github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} -o build/releases
+          if ($LASTEXITCODE -ne 0) { Write-Host "Keine vorherige Version gefunden, baue ohne Delta."; $global:LASTEXITCODE = 0 }
+          vpk pack -u checkst -v $env:VERSION -p build/pack -e checkst.exe --packTitle checkst --packAuthors checkst -i src-tauri/icons/icon.ico --releaseNotes build-notes.md -o build/releases
+          if ($LASTEXITCODE -ne 0) { throw "vpk pack fehlgeschlagen" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: checkst-${{ env.VERSION }}
+          path: build/releases/*
+
+      - name: Publish GitHub release
+        shell: pwsh
+        run: |
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} -o build/releases --publish --releaseName "checkst $env:VERSION" --tag "v$env:VERSION" --targetCommitish ${{ github.sha }}
+          if ($LASTEXITCODE -ne 0) { throw "vpk upload fehlgeschlagen" }
+
+      # Pages only deploys from main, so the website workflow is started on main instead of
+      # being called from this tag run. (workflow_dispatch works with GITHUB_TOKEN.)
+      - name: Rebuild website
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run pages.yml --ref main --repo ${{ github.repository }}

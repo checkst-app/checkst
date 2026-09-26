@@ -1,0 +1,15 @@
+{
+  "domain": "checkst.regbr.de",
+  "repo": "checkst-app/checkst",
+  "setupAsset": "checkst-win-Setup.exe",
+  "portableAsset": "checkst-win-Portable.zip",
+  "winget": "",
+  "fallback": {
+    "license": "MIT",
+    "topics": ["todo-txt", "windows", "productivity", "local-first"]
+  },
+  "legal": {
+    "impressumUrl": "",
+    "privacyUrl": ""
+  }
+}
