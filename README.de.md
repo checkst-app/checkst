@@ -2,7 +2,7 @@
 
 [English](README.md) · **Deutsch**
 
-Die ruhige To-do-App für Windows auf Basis von [todo.txt](https://github.com/todotxt/todo.txt).
+Die ruhige To-do-App für Windows und Android auf Basis von [todo.txt](https://github.com/todotxt/todo.txt).
 Deine Aufgaben liegen in einer einfachen Textdatei, lokal, offen und in jedem Editor lesbar.
 
 Website: [checkst.regbr.de](https://checkst.regbr.de)
@@ -19,6 +19,8 @@ Website: [checkst.regbr.de](https://checkst.regbr.de)
 - Deutsch und Englisch, Datums- und Zeitformate einstellbar
 - Startet auf Wunsch mit Windows im Infobereich
 - **Automatische Updates** über GitHub Releases mit [Velopack](https://velopack.io)
+- **Android-App** mit derselben todo.txt: Datei in der Dateiauswahl des Systems wählen, zum Beispiel
+  in einem Syncthing-, OneDrive- oder Google-Drive-Ordner. Wischen zum Abhaken, Schnelleingabe mit `(A) + @ due:`-Leiste
 
 Die Datei bleibt immer gültiges todo.txt: checkst schreibt nur Zeilen um, die du änderst,
 behält Zeilenenden (CRLF/LF) und BOM bei und speichert atomar.
@@ -34,6 +36,15 @@ npm test               # Parser-Tests (Vitest)
 cd src-tauri; cargo test   # Rust-Tests (Dateizugriff)
 ```
 
+Für Android zusätzlich JDK 17, Android SDK mit NDK (`JAVA_HOME`, `ANDROID_HOME`, `NDK_HOME`) und
+die Rust-Targets:
+
+```powershell
+rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+npm run tauri android dev                    # im Emulator oder auf einem angeschlossenen Handy
+npm run tauri android build -- --apk         # APK unter src-tauri/gen/android/app/build/outputs/apk
+```
+
 Aufbau:
 
 | Pfad | Inhalt |
@@ -41,8 +52,10 @@ Aufbau:
 | `src/lib/todo.ts` | todo.txt-Parser und -Serializer |
 | `src/lib/store.tsx` | Laden, Speichern, Archiv, Überwachung |
 | `src/views/` | Hauptansicht, Dialog, Einstellungen, Einrichtung, Schnellerfassung |
+| `src/mobile/` | Android-Oberfläche (Liste, Schnelleingabe, Bearbeiten, Listen, Einstellungen, Einrichtung) |
 | `src/styles/` | Design-Tokens (hell/dunkel) und Styles aus den Pencil-Designs |
-| `src-tauri/src/` | Rust: Dateien, Überwachung, Infobereich, Kürzel, Updates |
+| `src-tauri/src/` | Rust: Dateien und Einstellungen (`lib.rs`), Desktop (`desktop.rs`), Android (`android.rs`) |
+| `src-tauri/gen/android/` | Android-Projekt; `CheckstPlugin.kt` liest und schreibt die gewählte todo.txt |
 | `website/` | Landingpage für [checkst.regbr.de](https://checkst.regbr.de) (GitHub Pages) |
 | `design/` | Referenz-Screenshots der Designs und Beispieldaten |
 
@@ -59,7 +72,8 @@ git push origin v0.2.0
 2. Mit [Velopack](https://velopack.io) packen: `checkst-win-Setup.exe`, `checkst-win-Portable.zip`,
    Voll- und Delta-Pakete, `releases.win.json`. Die Versionshinweise kommen aus den Commits seit dem letzten Tag.
 3. Als GitHub-Release veröffentlichen
-4. Website neu bauen (Version, Datum und Downloadgröße aktualisieren sich)
+4. Parallel die signierte Android-App bauen und als `checkst-android.apk` anhängen
+5. Website neu bauen (Version, Datum und Downloadgrößen aktualisieren sich)
 
 Alternativ im Tab *Actions → Release → Run workflow* mit einer Versionsnummer starten.
 
@@ -69,6 +83,22 @@ Die App sucht Updates unter `https://github.com/checkst-app/checkst/releases/lat
 *Einstellungen → Über checkst* lässt sich das abschalten oder manuell auslösen.
 
 Lokal bauen (ohne Veröffentlichung): `npm run release -- -Version 0.2.0` → `build\releases\`.
+
+**Android:** Die App prüft beim Start (und unter *Einstellungen → Über checkst*) das neueste
+GitHub-Release und verlinkt die neue APK; Android installiert sie über die alte Version. Das klappt
+nur, wenn jede APK mit demselben Schlüssel signiert ist. Der Release-Workflow signiert deshalb mit
+diesen Repository-Secrets:
+
+| Secret | Inhalt |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | der Keystore (`.jks`), Base64-kodiert |
+| `ANDROID_KEY_PASSWORD` | Passwort von Keystore und Schlüssel |
+| `ANDROID_KEY_ALIAS` | Alias des Schlüssels (`checkst`) |
+
+Ohne sie gibt der Android-Job nur eine Warnung aus, und das Release enthält nur Windows. Den
+Keystore gut aufbewahren: Ohne ihn lassen sich installierte Apps nicht mehr aktualisieren. Für
+lokale Release-Builds eine `keystore.properties` (`storeFile`, `password`, `keyAlias`) nach
+`src-tauri/gen/android/` legen (steht in `.gitignore`).
 
 ## Website
 
@@ -82,7 +112,8 @@ npm run site:preview   # http://localhost:4173, ?theme=light|dark erzwingt ein F
 
 Beim Bauen liest `website/build.mjs` aus der GitHub-API: Beschreibung, Topics und Lizenz des
 Repos (Repo-Karte), die neueste Version mit Datum und Versionshinweisen (Download-Bereich) und die
-Größe des Installers (Hero). Die Download-Buttons zeigen auf
+Größe des Installers (Hero). Sobald ein Release `checkst-android.apk` enthält, zeigt die Seite auch
+den Android-Download (auf Android-Handys als Haupt-Button). Die Download-Buttons zeigen auf
 `releases/latest/download/checkst-win-Setup.exe` und bleiben damit immer aktuell.
 
 `.github/workflows/pages.yml` veröffentlicht die Seite bei Änderungen an `website/`, nach jedem

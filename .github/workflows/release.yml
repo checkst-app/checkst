@@ -1,9 +1,11 @@
 # Release pipeline: push a tag like v0.2.0 and GitHub Actions
-#   1. builds checkst (Tauri, Windows) with the version from the tag,
-#   2. packages it with Velopack (installer, portable zip, delta + full update packages),
-#   3. publishes a GitHub release – the app's auto-update reads
+#   1. builds checkst for Windows (Tauri) with the version from the tag and packages it with
+#      Velopack (installer, portable zip, delta + full update packages),
+#   2. publishes a GitHub release – the Windows auto-update reads
 #      https://github.com/checkst-app/checkst/releases/latest/download/releases.win.json,
-#   4. rebuilds the website so version, date and download size are up to date.
+#   3. builds the signed Android app in parallel and attaches it as checkst-android.apk
+#      (needs the ANDROID_KEYSTORE_BASE64, ANDROID_KEY_PASSWORD and ANDROID_KEY_ALIAS secrets),
+#   4. rebuilds the website so version, date and download sizes are up to date.
 name: Release
 
 on:
@@ -24,19 +26,27 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - id: v
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then v="${{ inputs.version }}"; else v="${GITHUB_REF_NAME#v}"; fi
+          if ! [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then echo "::error::Ungültige Version '$v' (erwartet z. B. 0.2.0)"; exit 1; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+  windows:
+    needs: version
     runs-on: windows-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Version
-        shell: pwsh
-        run: |
-          $v = if ("${{ github.event_name }}" -eq "workflow_dispatch") { "${{ inputs.version }}" } else { "${{ github.ref_name }}".TrimStart("v") }
-          if ($v -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw "Ungültige Version '$v' (erwartet z. B. 0.2.0)" }
-          "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - uses: actions/setup-node@v4
         with:
@@ -96,9 +106,105 @@ jobs:
           vpk upload github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} -o build/releases --publish --releaseName "checkst $env:VERSION" --tag "v$env:VERSION" --targetCommitish ${{ github.sha }}
           if ($LASTEXITCODE -ne 0) { throw "vpk upload fehlgeschlagen" }
 
+  android:
+    needs: version
+    runs-on: ubuntu-latest
+    outputs:
+      built: ${{ steps.apk.outputs.built }}
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      HAS_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - name: Signing key missing
+        if: env.HAS_KEY != 'true'
+        run: echo "::warning::Kein Android-Signaturschlüssel (Secret ANDROID_KEYSTORE_BASE64), die APK wird nicht gebaut."
+
+      - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
+
+      - uses: actions/setup-node@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+        if: env.HAS_KEY == 'true'
+
+      - name: Install NDK
+        if: env.HAS_KEY == 'true'
+        run: |
+          sdkmanager --install "ndk;28.2.13676358" > /dev/null
+          echo "NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+
+      - uses: dtolnay/rust-toolchain@stable
+        if: env.HAS_KEY == 'true'
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi
+
+      - uses: swatinem/rust-cache@v2
+        if: env.HAS_KEY == 'true'
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+        if: env.HAS_KEY == 'true'
+
+      - name: Set app version
+        if: env.HAS_KEY == 'true'
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Signing key
+        if: env.HAS_KEY == 'true'
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE" | base64 -d > src-tauri/gen/android/checkst-release.jks
+          printf 'storeFile=checkst-release.jks\npassword=%s\nkeyAlias=%s\n' "$PASSWORD" "${ALIAS:-checkst}" > src-tauri/gen/android/keystore.properties
+
+      - name: Build APK
+        if: env.HAS_KEY == 'true'
+        run: npm run tauri android build -- --apk --target aarch64 armv7
+
+      - id: apk
+        if: env.HAS_KEY == 'true'
+        run: |
+          mkdir -p build
+          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk build/checkst-android.apk
+          echo "built=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          name: checkst-android
+          path: build/checkst-android.apk
+
+  publish:
+    needs: [version, windows, android]
+    if: always() && needs.windows.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/download-artifact@v4
+        if: needs.android.outputs.built == 'true'
+        with:
+          name: checkst-android
+
+      - name: Attach APK to the release
+        if: needs.android.outputs.built == 'true'
+        run: gh release upload "v$VERSION" checkst-android.apk --clobber --repo ${{ github.repository }}
+
       # Pages only deploys from main, so the website workflow is started on main instead of
       # being called from this tag run. (workflow_dispatch works with GITHUB_TOKEN.)
       - name: Rebuild website
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh workflow run pages.yml --ref main --repo ${{ github.repository }}

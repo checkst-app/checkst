@@ -2,7 +2,10 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window and the quick-capture bar",
-  "windows": ["main", "quick"],
+  "windows": [
+    "main",
+    "quick"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-minimize",
@@ -19,7 +22,6 @@
     "core:window:allow-set-theme",
     "opener:default",
     "opener:allow-reveal-item-in-dir",
-    "dialog:default",
-    "autostart:default"
+    "dialog:default"
   ]
 }

@@ -6,10 +6,12 @@
     "linux"
   ],
   "windows": [
-    "main"
+    "main",
+    "quick"
   ],
   "permissions": [
     "global-shortcut:default",
     "autostart:default"
-  ]
+  ],
+  "description": "Desktop-only plugins"
 }

@@ -21,6 +21,29 @@ pub struct FileInfo {
     pub dir_exists: bool,
 }
 
+impl TextFile {
+    pub fn missing() -> Self {
+        TextFile { exists: false, content: String::new(), bom: false }
+    }
+
+    /// Splits off a leading BOM so it can be written back unchanged.
+    pub fn from_text(text: String) -> Self {
+        let bom = text.starts_with(BOM);
+        let content = if bom { text[BOM.len()..].to_string() } else { text };
+        TextFile { exists: true, content, bom }
+    }
+}
+
+/// The text to store for `content`, with the BOM put back if the file had one.
+#[cfg_attr(not(target_os = "android"), allow(dead_code))]
+pub fn with_bom(content: &str, bom: bool) -> String {
+    if bom {
+        format!("{BOM}{content}")
+    } else {
+        content.to_string()
+    }
+}
+
 fn err<E: std::fmt::Display>(e: E) -> String {
     e.to_string()
 }
@@ -28,13 +51,10 @@ fn err<E: std::fmt::Display>(e: E) -> String {
 pub fn read(path: &str) -> Result<TextFile, String> {
     let p = Path::new(path);
     if !p.exists() {
-        return Ok(TextFile { exists: false, content: String::new(), bom: false });
+        return Ok(TextFile::missing());
     }
     let bytes = fs::read(p).map_err(err)?;
-    let text = String::from_utf8_lossy(&bytes).into_owned();
-    let bom = text.starts_with(BOM);
-    let content = if bom { text[BOM.len()..].to_string() } else { text };
-    Ok(TextFile { exists: true, content, bom })
+    Ok(TextFile::from_text(String::from_utf8_lossy(&bytes).into_owned()))
 }
 
 /// Writes the file atomically: temp file in the same folder, then rename.
@@ -70,38 +90,57 @@ fn detect_eol(content: &str) -> &'static str {
     }
 }
 
-/// Appends one line, keeping the file's line endings. Returns the 1-based line number.
-pub fn append_line(path: &str, line: &str) -> Result<usize, String> {
-    let file = read(path)?;
-    let eol = detect_eol(&file.content);
-    let mut content = file.content;
-    if !content.is_empty() && !content.ends_with('\n') {
-        content.push_str(eol);
+/// `content` with one more line, keeping the file's line endings, and the new line count.
+pub fn with_line_appended(content: &str, line: &str) -> (String, usize) {
+    let eol = detect_eol(content);
+    let mut next = content.to_string();
+    if !next.is_empty() && !next.ends_with('\n') {
+        next.push_str(eol);
     }
-    content.push_str(line);
-    content.push_str(eol);
-    write(path, &content, file.bom)?;
-    Ok(content.lines().count())
+    next.push_str(line);
+    next.push_str(eol);
+    let count = next.lines().count();
+    (next, count)
 }
 
-/// Removes the last line if it equals `line` (undo for quick capture).
-pub fn remove_last_line_if(path: &str, line: &str) -> Result<bool, String> {
-    let file = read(path)?;
-    let eol = detect_eol(&file.content);
-    let mut lines: Vec<&str> = file.content.lines().collect();
+/// `content` without its last line if that line equals `line` (undo for quick capture).
+pub fn without_last_line(content: &str, line: &str) -> Option<String> {
+    let eol = detect_eol(content);
+    let mut lines: Vec<&str> = content.lines().collect();
     while lines.last().map(|l| l.trim().is_empty()).unwrap_or(false) {
         lines.pop();
     }
-    if lines.last().map(|l| *l == line).unwrap_or(false) {
-        lines.pop();
-        let mut content = lines.join(eol);
-        if !content.is_empty() {
-            content.push_str(eol);
-        }
-        write(path, &content, file.bom)?;
-        return Ok(true);
+    if lines.last().map(|l| *l == line) != Some(true) {
+        return None;
     }
-    Ok(false)
+    lines.pop();
+    let mut next = lines.join(eol);
+    if !next.is_empty() {
+        next.push_str(eol);
+    }
+    Some(next)
+}
+
+/// Appends one line, keeping the file's line endings. Returns the 1-based line number.
+#[cfg(test)]
+pub fn append_line(path: &str, line: &str) -> Result<usize, String> {
+    let file = read(path)?;
+    let (content, count) = with_line_appended(&file.content, line);
+    write(path, &content, file.bom)?;
+    Ok(count)
+}
+
+/// Removes the last line if it equals `line` (undo for quick capture).
+#[cfg(test)]
+pub fn remove_last_line_if(path: &str, line: &str) -> Result<bool, String> {
+    let file = read(path)?;
+    match without_last_line(&file.content, line) {
+        Some(content) => {
+            write(path, &content, file.bom)?;
+            Ok(true)
+        }
+        None => Ok(false),
+    }
 }
 
 pub fn info(path: &str) -> FileInfo {

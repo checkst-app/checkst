@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Adaptive icon foreground: the mark inside the 66/108 safe zone, background is a separate layer. -->
+  <g transform="translate(262 262) scale(5)" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="12">
+    <path d="M70 15.36 A40 40 0 1 0 70 84.64" stroke="#FFFFFF"/>
+    <path d="M32 50 l16 16 42 -40" stroke="#BFEBD6"/>
+  </g>
+</svg>

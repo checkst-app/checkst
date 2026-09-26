@@ -1,10 +1,14 @@
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
+import { isMobile } from "./lib/platform";
 import "./styles/tokens.css";
 import "./styles/app.css";
+
+// The Android app has its own touch layout, loaded as a separate chunk.
+const MobileApp = lazy(() => import("./mobile/MobileApp"));
 
 // No browser context menu or reload shortcuts in the desktop app.
 if (!import.meta.env.DEV) {
@@ -19,6 +23,12 @@ if (!import.meta.env.DEV) {
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    {isMobile ? (
+      <Suspense fallback={null}>
+        <MobileApp />
+      </Suspense>
+    ) : (
+      <App />
+    )}
   </React.StrictMode>,
 );

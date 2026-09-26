@@ -19,6 +19,9 @@ export interface Settings {
   showRaw: boolean;
   todoPath: string;
   donePath: string;
+  /** Readable location of a picked Android file, e.g. "Syncthing/Aufgaben/todo.txt". */
+  todoLabel: string;
+  doneLabel: string;
   autoArchive: boolean;
   watchExternal: boolean;
   autostart: boolean;
@@ -49,6 +52,8 @@ export const defaultSettings: Settings = {
   showRaw: false,
   todoPath: "",
   donePath: "",
+  todoLabel: "",
+  doneLabel: "",
   autoArchive: true,
   watchExternal: true,
   autostart: false,

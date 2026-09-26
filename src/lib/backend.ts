@@ -27,6 +27,12 @@ export interface UpdateStatus {
   readyToInstall: boolean;
 }
 
+/** Result of the Android file picker; `uri` is missing when it was cancelled. */
+export interface PickedFile {
+  uri?: string | null;
+  label?: string | null;
+}
+
 export const backend = {
   readTextFile: (path: string) => invoke<TextFile>("read_text_file", { path }),
   writeTextFile: (path: string, content: string, bom: boolean) => invoke<void>("write_text_file", { path, content, bom }),
@@ -53,6 +59,9 @@ export const backend = {
   downloadUpdate: () => invoke<boolean>("download_update"),
   applyUpdate: () => invoke<void>("apply_update"),
   updateUrl: () => invoke<string>("update_url"),
+  // Android only
+  pickFile: (create: boolean, name: string) => invoke<PickedFile>("pick_file", { create, name }),
+  setSystemBars: (dark: boolean, top: string, bottom: string) => invoke<void>("set_system_bars", { dark, top, bottom }),
 };
 
 export function fileName(path: string): string {

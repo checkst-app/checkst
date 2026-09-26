@@ -134,6 +134,16 @@ svg {
   display: none;
 }
 
+/* the main download button: Windows, or Android on Android phones (if the release has the APK) */
+.only-android,
+.is-android .not-android:has(+ .only-android) {
+  display: none;
+}
+
+.is-android .only-android {
+  display: inline-flex;
+}
+
 .eyebrow {
   font: 600 15px/1.2 var(--font-ui);
   color: var(--accent);

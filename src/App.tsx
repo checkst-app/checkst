@@ -73,7 +73,7 @@ export function App() {
   return label === "quick" ? <QuickRoot /> : <MainRoot />;
 }
 
-function Providers({ settings, update, children }: { settings: Settings; update: (p: Partial<Settings>) => void; children: React.ReactNode }) {
+export function Providers({ settings, update, children }: { settings: Settings; update: (p: Partial<Settings>) => void; children: React.ReactNode }) {
   const lang = useLang(settings);
   const i18n = useMemo(() => ({ t: makeT(lang), lang }), [lang]);
   useApplyTheme(settings);

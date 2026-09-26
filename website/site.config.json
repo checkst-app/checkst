@@ -3,10 +3,16 @@
   "repo": "checkst-app/checkst",
   "setupAsset": "checkst-win-Setup.exe",
   "portableAsset": "checkst-win-Portable.zip",
+  "androidAsset": "checkst-android.apk",
   "winget": "",
   "fallback": {
     "license": "MIT",
-    "topics": ["todo-txt", "windows", "productivity", "local-first"]
+    "topics": [
+      "todo-txt",
+      "windows",
+      "productivity",
+      "local-first"
+    ]
   },
   "legal": {
     "impressumUrl": "",

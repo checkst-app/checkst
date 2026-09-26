@@ -50,6 +50,7 @@ async function loadData() {
   let rel = null;
   if (release && !release.draft) {
     const setup = release.assets?.find((a) => a.name === cfg.setupAsset);
+    const apk = release.assets?.find((a) => a.name === cfg.androidAsset);
     const published = new Date(release.published_at ?? release.created_at);
     const fmt = (locale) => new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(published);
     rel = {
@@ -57,6 +58,8 @@ async function loadData() {
       version: release.tag_name.replace(/^v/, ""),
       notesUrl: release.html_url,
       sizeMB: setup ? Math.max(1, Math.round(setup.size / 1_000_000)) : null,
+      // The Android app shows up on the page as soon as a release carries the APK.
+      android: apk ? { sizeMB: Math.max(1, Math.round(apk.size / 1_000_000)) } : null,
       dateLabel: { de: fmt(de.dateLocale), en: fmt(en.dateLocale) },
     };
   }
@@ -75,6 +78,7 @@ async function loadData() {
     downloads: {
       setup: releaseDownload(cfg.setupAsset),
       portable: releaseDownload(cfg.portableAsset),
+      android: releaseDownload(cfg.androidAsset),
       releases: `${url}/releases`,
     },
   };
@@ -127,6 +131,8 @@ const themeBoot = (redirect) =>
     "var c=localStorage.getItem('checkst-theme')||'auto';",
     "var d=c==='dark'||(c==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);",
     "r.dataset.theme=d?'dark':'light'}catch(e){}",
+    // Android visitors get the APK as the main download.
+    "if(/Android/i.test(navigator.userAgent))r.classList.add('is-android');",
     // Entrance and scroll animations; content stays visible if site.js never runs.
     "if(!matchMedia('(prefers-reduced-motion: reduce)').matches){r.classList.add('motion');",
     "setTimeout(function(){if(!window.__checkstMotion)r.classList.remove('motion')},2500)}})();",
@@ -142,7 +148,7 @@ async function main() {
   const icons = [
     "monitor", "sun", "moon", "download", "cloud", "box", "git-branch", "refresh-cw", "file-text", "calendar",
     "folder", "hash", "archive", "history", "power", "eye", "lock", "bug", "book-marked", "scale", "tag", "copy",
-    "package", "folder-archive", "terminal", "minus", "plus", "languages",
+    "package", "folder-archive", "terminal", "minus", "plus", "languages", "smartphone",
   ];
   await preloadIcons(icons);
   await fonts();

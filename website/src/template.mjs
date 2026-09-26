@@ -22,7 +22,8 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
   const setupHref = hasRelease ? dl.setup : dl.releases;
   const portableHref = hasRelease ? dl.portable : dl.releases;
   const year = new Date().getFullYear();
-  const heroMeta = `${esc(t.hero.meta)}${r?.sizeMB ? ` · ${r.sizeMB} MB` : ""}`;
+  const android = r?.android;
+  const heroMeta = `${esc(android ? t.hero.metaAndroid : t.hero.meta)}${r?.sizeMB ? ` · ${r.sizeMB} MB` : ""}`;
   const langSwitch = (cls = "") =>
     `<span class="lang-switch ${cls}"><a href="${prefix}" hreflang="de" data-lang="de" class="${lang === "de" ? "active" : ""}">DE</a><span>/</span><a href="${prefix}en/" hreflang="en" data-lang="en" class="${lang === "en" ? "active" : ""}">EN</a></span>`;
   const chip = (kind, name) => `<span class="chip chip-${kind}">${kind === "project" ? "+" : "@"}${esc(name)}</span>`;
@@ -85,11 +86,12 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
 
 <main id="main">
 <section class="hero">
-  <p class="badge"><span class="badge-tag">${esc(t.hero.badgeTag)}</span>${esc(hasRelease ? fill(t.hero.badge, { version: r.version.replace(/\.0$/, "") }) : t.hero.badgeNoRelease)}</p>
+  <p class="badge"><span class="badge-tag">${esc(t.hero.badgeTag)}</span>${esc(hasRelease ? fill(android ? t.hero.badgeAndroid : t.hero.badge, { version: r.version.replace(/\.0$/, "") }) : t.hero.badgeNoRelease)}</p>
   <h1>${t.hero.headline}</h1>
   <p class="hero-sub">${esc(t.hero.subline)}</p>
   <div class="hero-ctas">
-    <a class="btn btn-accent btn-lg btn-glow" href="${setupHref}">${windowsLogo(20)}${esc(t.hero.primary)}</a>
+    <a class="btn btn-accent btn-lg btn-glow not-android" href="${setupHref}">${windowsLogo(20)}${esc(t.hero.primary)}</a>
+    ${android ? `<a class="btn btn-accent btn-lg btn-glow only-android" href="${dl.android}">${icon("smartphone", 20)}${esc(t.hero.primaryAndroid)}</a>` : ""}
     <a class="btn btn-surface btn-lg" href="${repoUrl}">${githubMark(18)}${esc(t.hero.secondary)}</a>
   </div>
   <p class="hero-meta" data-live="hero-meta">${heroMeta}</p>
@@ -209,7 +211,7 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
     <div class="repo-facts">
       <div><span>${icon("scale", 14)}${esc(t.openSource.license)}</span><b>${esc(data.repo.license)}</b></div>
       <div><span>${icon("tag", 14)}${esc(t.openSource.latest)}</span><b>${hasRelease ? `<a href="${r.notesUrl}">${esc(r.tag)}</a>` : esc(t.openSource.noRelease)}</b></div>
-      <div><span>${icon("monitor", 14)}${esc(t.openSource.system)}</span><b>${esc(t.openSource.systemValue)}</b></div>
+      <div><span>${icon("monitor", 14)}${esc(t.openSource.system)}</span><b>${esc(android ? t.openSource.systemValueAndroid : t.openSource.systemValue)}</b></div>
     </div>
     <div class="repo-clone">
       <code><span>$</span> git clone ${esc(data.repo.cloneUrl)}</code>
@@ -223,7 +225,8 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
     <span class="download-icon">${mark(54, { c: "#FFFFFF", check: "#BFEBD6", weight: 12 })}</span>
     <h2>${esc(t.download.title)}</h2>
     <p class="lead">${esc(t.download.text)}</p>
-    <a class="btn btn-white btn-xl" href="${setupHref}">${windowsLogo(22)}${esc(t.download.primary)}</a>
+    <a class="btn btn-white btn-xl not-android" href="${setupHref}">${windowsLogo(22)}${esc(t.download.primary)}</a>
+    ${android ? `<a class="btn btn-white btn-xl only-android" href="${dl.android}">${icon("smartphone", 22)}${esc(t.download.primaryAndroid)}</a>` : ""}
     <p class="download-meta">${
       hasRelease
         ? fill(t.download.meta, { version: esc(r.version), date: esc(r.dateLabel[lang]), notes: r.notesUrl })
@@ -239,6 +242,14 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
         <code>${esc(t.download.portable[1])}</code><p>${esc(t.download.portable[2])}</p>
       </a>
       ${
+        android
+          ? `<a class="option" href="${dl.android}">
+        <span class="option-head">${icon("smartphone", 18)}<b>${esc(t.download.android[0])}</b>${icon("download", 16)}</span>
+        <code>${esc(t.download.android[1])} · ${android.sizeMB} MB</code><p>${esc(t.download.android[2])}</p>
+      </a>`
+          : ""
+      }
+      ${
         cfg.winget
           ? `<button type="button" class="option copy" data-copy="winget install ${esc(cfg.winget)}" data-copied="${esc(t.openSource.copied)}">
         <span class="option-head">${icon("terminal", 18)}<b>${esc(t.download.winget[0])}</b>${icon("copy", 16)}</span>
@@ -253,7 +264,7 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
 <section class="faq" id="faq">
   <div class="faq-head" data-reveal><p class="eyebrow">${esc(t.faq.eyebrow)}</p><h2>${esc(t.faq.title)}</h2></div>
   <div class="faq-list">
-    ${t.faq.items.map(([q, a], i) => `<details open data-reveal style="--i:${i}"><summary>${esc(q)}${icon("minus", 18)}${icon("plus", 18)}</summary><p>${esc(a)}</p></details>`).join("\n    ")}
+    ${t.faq.items.map(([q, a, aAndroid], i) => `<details open data-reveal style="--i:${i}"><summary>${esc(q)}${icon("minus", 18)}${icon("plus", 18)}</summary><p>${esc(android && aAndroid ? aAndroid : a)}</p></details>`).join("\n    ")}
   </div>
 </section>
 </main>
