@@ -471,6 +471,10 @@ h2 {
   min-height: 440px;
 }
 
+.row-note {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .row-2 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   min-height: 400px;
@@ -829,6 +833,173 @@ h2 {
 .qb-item .keycap {
   padding: 1px 6px;
   font-size: 11px;
+}
+
+/* pinned today note: text next to a small desktop with the note on top, as in the app */
+.card-note {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 48px;
+}
+
+.note-points {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.note-points li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.note-points svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.note-demo {
+  position: relative;
+  min-height: 320px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+
+/* An app window in the background, so the note visibly floats above it. */
+.nd-window {
+  position: absolute;
+  top: 30px;
+  bottom: -24px;
+  left: 26px;
+  width: 58%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 46px 22px 22px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.nd-line {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-hover);
+}
+
+.nd-note {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  width: min(330px, 82%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), 0 18px 40px #1a1a1929, 0 2px 6px #1a1a1914;
+  font-size: 13px;
+  text-align: left;
+}
+
+.nd-header,
+.nd-add {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.nd-header {
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.nd-header > svg,
+.nd-add > svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.nd-header small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.nd-overdue {
+  color: var(--danger);
+}
+
+.nd-close {
+  display: inline-flex;
+  margin-left: auto;
+  color: var(--text-tertiary);
+}
+
+.nd-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+}
+
+.nd-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.nd-row .chip {
+  font-size: 12px;
+}
+
+.nd-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nd-due {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--danger);
+}
+
+.nd-row .checkbox.checked {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  box-shadow: none;
+  color: var(--on-accent);
+}
+
+.nd-row.done .nd-text {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+  text-decoration-color: var(--border-strong);
+}
+
+.nd-add {
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
 }
 
 /* small feature cards */
@@ -1581,6 +1752,11 @@ h2 {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .card-note {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
   .download-options {
     grid-auto-flow: row;
   }
@@ -1745,6 +1921,25 @@ h2 {
 
   .qb-preview {
     padding-left: 46px;
+  }
+
+  .note-demo {
+    min-height: 290px;
+  }
+
+  .nd-note {
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+
+  /* Wrap long tasks like the note in the app instead of cutting them off. */
+  .nd-row {
+    white-space: normal;
+  }
+
+  .nd-due {
+    white-space: nowrap;
   }
 
   .editor-lines {

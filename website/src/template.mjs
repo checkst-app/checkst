@@ -31,6 +31,7 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
 
   const features = t.features;
   const bar = features.bar;
+  const note = features.note;
   const legalLinks = [
     cfg.legal.impressumUrl && `<a href="${esc(cfg.legal.impressumUrl)}">${esc(t.footer.impressum)}</a>`,
     cfg.legal.privacyUrl && `<a href="${esc(cfg.legal.privacyUrl)}">${esc(t.footer.privacy)}</a>`,
@@ -142,6 +143,31 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
         <div class="qb-suggest">
           <div class="qb-section"><span>${esc(bar.section)}</span><span>${esc(bar.sort)}</span></div>
           <div class="qb-item">${icon("folder", 15)}<span class="qb-name"><b>+G</b>${esc(bar.ghost)}</span><span class="qb-meta">${esc(bar.meta)}</span>${key("Tab")}</div>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div class="grid-row row-note">
+    <article class="card card-note" data-reveal>
+      <div class="card-text">
+        <h3>${esc(features.noteTitle)}</h3>
+        <p>${esc(features.noteText)}</p>
+        <ul class="note-points">${features.notePoints.map((p) => `<li>${icon("check", 16)}${esc(p)}</li>`).join("")}</ul>
+      </div>
+      <div class="note-demo" aria-hidden="true">
+        <div class="nd-window">${[64, 48, 72, 40, 56].map((w) => `<span class="nd-line" style="width:${w}%"></span>`).join("")}</div>
+        <div class="nd-note">
+          <div class="nd-header">${icon("sun", 15)}<b>${esc(note.title)}</b><small>${esc(note.summary)} · <span class="nd-overdue">${esc(note.overdue)}</span></small><span class="nd-close">${icon("x", 14)}</span></div>
+          <div class="nd-rows">
+            ${note.rows
+              .map(
+                (r) =>
+                  `<div class="nd-row ${r.done ? "done" : ""}"><span class="checkbox ${r.done ? "checked" : ""}">${r.done ? icon("check", 12) : ""}</span>${r.prio ? `<span class="prio prio-a">${r.prio}</span>` : ""}<span class="nd-text">${esc(r.text)}</span>${r.chip ? chip(r.chip[0], r.chip[1]) : ""}${r.due ? `<span class="nd-due">${esc(r.due)}</span>` : ""}</div>`,
+              )
+              .join("\n            ")}
+          </div>
+          <div class="nd-add">${icon("plus", 15)}<span>${esc(note.add)}</span></div>
         </div>
       </div>
     </article>

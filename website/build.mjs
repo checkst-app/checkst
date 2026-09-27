@@ -148,7 +148,7 @@ async function main() {
   const icons = [
     "monitor", "sun", "moon", "download", "cloud", "box", "git-branch", "refresh-cw", "file-text", "calendar",
     "folder", "hash", "archive", "history", "power", "eye", "lock", "bug", "book-marked", "scale", "tag", "copy",
-    "package", "folder-archive", "terminal", "minus", "plus", "languages", "smartphone",
+    "package", "folder-archive", "terminal", "minus", "plus", "languages", "smartphone", "x", "check",
   ];
   await preloadIcons(icons);
   await fonts();
