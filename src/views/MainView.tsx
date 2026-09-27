@@ -8,6 +8,8 @@ import {
   FileText,
   Layers,
   ListFilter,
+  Pin,
+  PinOff,
   Plus,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -16,7 +18,7 @@ import type { UpdateState } from "../App";
 import { Sidebar } from "../components/Sidebar";
 import { SyntaxInput, type SyntaxInputHandle } from "../components/SyntaxInput";
 import { TaskRow } from "../components/TaskRow";
-import { Keycap, type MenuItem, MenuButton } from "../components/ui";
+import { Button, Keycap, type MenuItem, MenuButton } from "../components/ui";
 import { type FocusRequest, fileName } from "../lib/backend";
 import { todayIso } from "../lib/dates";
 import { useT } from "../lib/i18n";
@@ -29,7 +31,7 @@ import { TaskDialog } from "./TaskDialog";
 
 const GROUP_LIMIT = 12;
 
-function useToday() {
+export function useToday() {
   const [today, setToday] = useState(todayIso);
   useEffect(() => {
     const id = window.setInterval(() => setToday(todayIso()), 60_000);
@@ -59,8 +61,15 @@ export function MainView({ update, onCheckUpdate }: { update: UpdateState; onChe
       setSearch("");
       setFocusRequest(e.payload);
     });
+    // "In checkst öffnen" on the pinned today note.
+    const unToday = listen("open-today", () => {
+      setPage("tasks");
+      setView({ kind: "today" });
+      setSearch("");
+    });
     return () => {
       un.then((f) => f());
+      unToday.then((f) => f());
     };
   }, []);
 
@@ -360,6 +369,19 @@ function TasksPane({
           </div>
         </div>
         <div className="controls">
+          {view.kind === "today" && (
+            <>
+              <Button
+                icon={settings.notePinned ? PinOff : Pin}
+                title={settings.notePinned ? undefined : t("note.pinHint")}
+                className={settings.notePinned ? "btn-filter-active" : ""}
+                onClick={() => update({ notePinned: !settings.notePinned })}
+              >
+                {settings.notePinned ? t("note.unpin") : t("note.pin")}
+              </Button>
+              <span className="controls-sep" />
+            </>
+          )}
           <MenuButton items={sortItems} icon={ArrowUpDown}>
             {t("sort.label", { v: sortLabels[settings.sortBy] })}
           </MenuButton>

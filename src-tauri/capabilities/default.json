@@ -1,10 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for the main window and the quick-capture bar",
+  "description": "Capability for the main window, the quick-capture bar and the pinned today note",
   "windows": [
     "main",
-    "quick"
+    "quick",
+    "note"
   ],
   "permissions": [
     "core:default",
@@ -16,6 +17,8 @@
     "core:window:allow-show",
     "core:window:allow-set-focus",
     "core:window:allow-start-dragging",
+    "core:window:allow-start-resize-dragging",
+    "core:window:allow-set-position",
     "core:window:allow-set-size",
     "core:window:allow-set-min-size",
     "core:window:allow-center",

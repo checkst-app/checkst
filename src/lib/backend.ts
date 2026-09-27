@@ -50,7 +50,8 @@ export const backend = {
   showQuick: () => invoke<void>("show_quick"),
   hideQuick: () => invoke<void>("hide_quick"),
   setQuickShortcut: (accelerator: string) => invoke<void>("set_quick_shortcut", { accelerator }),
-  setTrayLabels: (open: string, newTask: string, quit: string) => invoke<void>("set_tray_labels", { open, newTask, quit }),
+  setTrayLabels: (open: string, newTask: string, pin: string, pinned: boolean, quit: string) =>
+    invoke<void>("set_tray_labels", { open, newTask, pin, pinned, quit }),
   setAppIcon: (windowRgba: number[], windowSize: number, trayRgba: number[], traySize: number) =>
     invoke<void>("set_app_icon", { windowRgba, windowSize, trayRgba, traySize }),
   quitApp: () => invoke<void>("quit_app"),

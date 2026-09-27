@@ -6,6 +6,7 @@ const de = {
   "app.setupTitle": "checkst einrichten",
   "tray.open": "checkst öffnen",
   "tray.newTask": "Neue Aufgabe …",
+  "tray.pinToday": "Heute anheften",
   "tray.quit": "Beenden",
   "window.minimize": "Minimieren",
   "window.maximize": "Maximieren",
@@ -191,6 +192,13 @@ const de = {
   "qc.checkTitle": "Abhaken",
   "qc.uncheckTitle": "Wieder öffnen",
 
+  // today note (pinned window)
+  "note.pin": "Anheften",
+  "note.unpin": "Lösen",
+  "note.pinHint": "Heute als Notiz über allen Fenstern anheften",
+  "note.addPlaceholder": "Aufgabe für heute",
+  "note.resize": "Größe ändern",
+
   // setup
   "setup.title": "Einrichtung",
   "setup.subtitle": "In vier Schritten startklar",
@@ -255,6 +263,8 @@ const de = {
   "setup.optCreatedT": "Neue Aufgaben beginnen mit dem heutigen Datum, etwa {date}.",
   "setup.optBackup": "Tägliche Sicherung anlegen",
   "setup.optBackupT": "Bewahrt die letzten 7 Versionen im Ordner .checkst-backup neben der todo.txt auf.",
+  "setup.optNote": "Heute als Notiz anheften",
+  "setup.optNoteT": "Zeigt deine Aufgaben für heute als kleine Notiz über allen Fenstern.",
   "setup.lookTitle": "Wie soll checkst aussehen?",
   "setup.lookText": "Wähle ein Design. Du kannst es jederzeit in den Einstellungen ändern.",
   "setup.followsWindows": "Folgt Windows",
@@ -269,6 +279,7 @@ const de = {
   "setup.optArchiveShort": "Automatisch archivieren",
   "setup.optCreatedShort": "Erstelldatum hinzufügen",
   "setup.optBackupShort": "Tägliche Sicherung",
+  "setup.optNoteShort": "Heute anheften",
   "setup.themeLight": "Hell",
   "setup.themeDark": "Dunkel",
   "setup.themeSystem": "System, passt sich Windows an",
@@ -506,6 +517,7 @@ const en: Dict = {
   "app.setupTitle": "Set up checkst",
   "tray.open": "Open checkst",
   "tray.newTask": "New task …",
+  "tray.pinToday": "Pin Today",
   "tray.quit": "Quit",
   "window.minimize": "Minimize",
   "window.maximize": "Maximize",
@@ -681,6 +693,13 @@ const en: Dict = {
   "qc.checkTitle": "Check off",
   "qc.uncheckTitle": "Mark as open",
 
+  // today note (pinned window)
+  "note.pin": "Pin",
+  "note.unpin": "Unpin",
+  "note.pinHint": "Pin Today as a note above all windows",
+  "note.addPlaceholder": "Task for today",
+  "note.resize": "Resize",
+
   "setup.title": "Setup",
   "setup.subtitle": "Ready in four steps",
   "setup.s1": "Welcome",
@@ -744,6 +763,8 @@ const en: Dict = {
   "setup.optCreatedT": "New tasks start with today's date, e.g. {date}.",
   "setup.optBackup": "Create daily backup",
   "setup.optBackupT": "Keeps the last 7 versions in the .checkst-backup folder next to todo.txt.",
+  "setup.optNote": "Pin Today as a note",
+  "setup.optNoteT": "Shows today's tasks in a small note above all windows.",
   "setup.lookTitle": "How should checkst look?",
   "setup.lookText": "Choose a theme. You can change it anytime in Settings.",
   "setup.followsWindows": "Auto",
@@ -758,6 +779,7 @@ const en: Dict = {
   "setup.optArchiveShort": "Auto-archive",
   "setup.optCreatedShort": "add creation date",
   "setup.optBackupShort": "daily backup",
+  "setup.optNoteShort": "pin Today",
   "setup.themeLight": "Light",
   "setup.themeDark": "Dark",
   "setup.themeSystem": "System, adapts to Windows",

@@ -26,6 +26,7 @@ export function Setup({ onDone }: { onDone: () => Promise<void> }) {
   const [autoArchive, setAutoArchive] = useState(settings.autoArchive);
   const [addCreated, setAddCreated] = useState(settings.addCreationDate);
   const [backup, setBackup] = useState(settings.backupDays > 0);
+  const [pinNote, setPinNote] = useState(settings.notePinned);
   const [theme, setTheme] = useState<ThemeSetting>(settings.theme);
   const [validation, setValidation] = useState<Validation>({ kind: "none" });
 
@@ -83,6 +84,7 @@ export function Setup({ onDone }: { onDone: () => Promise<void> }) {
       autoArchive,
       addCreationDate: addCreated,
       backupDays: backup ? 7 : 0,
+      notePinned: pinNote,
       theme,
     });
     await onDone();
@@ -158,6 +160,7 @@ export function Setup({ onDone }: { onDone: () => Promise<void> }) {
                   { title: t("setup.optArchive"), desc: t("setup.optArchiveT"), on: autoArchive, set: setAutoArchive },
                   { title: t("setup.optCreated"), desc: t("setup.optCreatedT", { date: todayIso() }), on: addCreated, set: setAddCreated },
                   { title: t("setup.optBackup"), desc: t("setup.optBackupT"), on: backup, set: setBackup },
+                  { title: t("setup.optNote"), desc: t("setup.optNoteT"), on: pinNote, set: setPinNote },
                 ]}
               />
             )}
@@ -170,7 +173,12 @@ export function Setup({ onDone }: { onDone: () => Promise<void> }) {
                   [t("setup.sumDone"), donePath],
                   [
                     t("setup.sumOptions"),
-                    [autoArchive && t("setup.optArchiveShort"), addCreated && t("setup.optCreatedShort"), backup && t("setup.optBackupShort")]
+                    [
+                      autoArchive && t("setup.optArchiveShort"),
+                      addCreated && t("setup.optCreatedShort"),
+                      backup && t("setup.optBackupShort"),
+                      pinNote && t("setup.optNoteShort"),
+                    ]
                       .filter(Boolean)
                       .join(", ") || t("setup.sumNone"),
                   ],

@@ -2676,7 +2676,8 @@ p {
   display: flex;
   flex-direction: column;
   gap: 22px;
-  padding: 36px 44px 24px;
+  /* Bottom kept small so step 3 with four options still fits the 640 px setup window. */
+  padding: 36px 44px 16px;
   overflow-y: auto;
 }
 
@@ -3518,4 +3519,202 @@ p {
 .quick-due.due-today {
   color: var(--accent);
   font-weight: 500;
+}
+
+/* ---------- today note (pinned window) ---------- */
+
+body.note-window {
+  background: var(--surface);
+}
+
+.note {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--surface);
+}
+
+.note-header {
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px 0 14px;
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.note-title {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.note-summary {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.note-summary .overdue {
+  color: var(--danger);
+}
+
+.note-btn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.note-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.note-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px;
+}
+
+.note-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 6px;
+}
+
+.note-row:hover {
+  background: var(--surface-hover);
+}
+
+.note-row .checkbox {
+  margin-top: 1px;
+}
+
+.note-row-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* Wrap long tasks instead of cutting them off: the note is narrow. */
+.note-row-text .task-text {
+  flex: 1 1 auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.note-row.done .task-words {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+  text-decoration-color: var(--border-strong);
+}
+
+.note-row.done .chip {
+  opacity: 0.6;
+}
+
+.note-due {
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--danger);
+  white-space: nowrap;
+}
+
+.note-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.note-add {
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px 0 14px;
+  border-top: 1px solid var(--border);
+  cursor: text;
+}
+
+.note-add .syntax-input .hl-layer,
+.note-add .syntax-input .hl-input {
+  font-family: var(--font-ui);
+  font-size: var(--fs-task);
+}
+
+/* Proportional font: keep one weight so the transparent input and the colored layer stay aligned. */
+.note-add .syntax-input .seg {
+  font-weight: 400;
+}
+
+/* Suggestions above the input, over the list. */
+.note-suggest {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 48px;
+  z-index: 60;
+}
+
+/* The list carries the variant class "ac-popup" itself; undo that rule's absolute offset here. */
+.note-suggest .ac-list {
+  position: static;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-popover);
+  padding: 4px;
+}
+
+/* The note is narrow: the raw due:… next to each date suggestion does not fit. */
+.note-suggest .ac-raw {
+  display: none;
+}
+
+.note-suggest .ac-hints {
+  flex-wrap: wrap;
+}
+
+.note-grip {
+  align-self: flex-end;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+  color: var(--text-tertiary);
+  cursor: nwse-resize;
 }

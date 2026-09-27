@@ -6,12 +6,13 @@ import { applyAppIcon } from "./lib/appIcon";
 import { backend, type UpdateStatus } from "./lib/backend";
 import type { Lang } from "./lib/dates";
 import { I18nContext, makeT, systemLang } from "./lib/i18n";
-import { type Settings, SettingsContext, mergeSettings } from "./lib/settings";
+import { type Settings, SettingsContext, mergeSettings, useSettings } from "./lib/settings";
 import { TodoContext, useTodoStore } from "./lib/store";
 import { useApplyTheme } from "./lib/theme";
 import { MainView } from "./views/MainView";
 import { QuickCapture } from "./views/QuickCapture";
 import { Setup } from "./views/Setup";
+import { TodayNote, useNoteWindow } from "./views/TodayNote";
 
 export function useSettingsState() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -70,7 +71,7 @@ export type UpdateState =
 
 export function App() {
   const label = useMemo(() => getCurrentWindow().label, []);
-  return label === "quick" ? <QuickRoot /> : <MainRoot />;
+  return label === "quick" ? <QuickRoot /> : label === "note" ? <NoteRoot /> : <MainRoot />;
 }
 
 export function Providers({ settings, update, children }: { settings: Settings; update: (p: Partial<Settings>) => void; children: React.ReactNode }) {
@@ -107,6 +108,26 @@ function QuickStore({ settings }: { settings: Settings }) {
       <QuickCapture />
     </TodoContext.Provider>
   );
+}
+
+function NoteRoot() {
+  const { settings, update } = useSettingsState();
+  useEffect(() => {
+    document.body.classList.add("note-window");
+  }, []);
+  if (!settings) return null;
+  return (
+    <Providers settings={settings} update={update}>
+      <NoteStore settings={settings} />
+    </Providers>
+  );
+}
+
+function NoteStore({ settings }: { settings: Settings }) {
+  const pinned = settings.setupDone && settings.notePinned;
+  const store = useTodoStore(settings, pinned);
+  useNoteWindow(pinned);
+  return <TodoContext.Provider value={store}>{pinned && <TodayNote />}</TodoContext.Provider>;
 }
 
 function MainRoot() {
@@ -162,6 +183,7 @@ function MainStore({ settings }: { settings: Settings }) {
   const lang = useLang(settings);
   const t = useMemo(() => makeT(lang), [lang]);
   const [update, setUpdate] = useState<UpdateState>({ phase: "idle" });
+  const { update: patchSettings } = useSettings();
   const storeRef = useRef(store);
   storeRef.current = store;
   const settingsRef = useRef(settings);
@@ -172,8 +194,16 @@ function MainStore({ settings }: { settings: Settings }) {
     backend.setQuickShortcut(settings.quickShortcut).catch(() => {});
   }, [settings.quickShortcut]);
   useEffect(() => {
-    backend.setTrayLabels(t("tray.open"), t("tray.newTask"), t("tray.quit")).catch(() => {});
-  }, [t]);
+    backend.setTrayLabels(t("tray.open"), t("tray.newTask"), t("tray.pinToday"), settings.notePinned, t("tray.quit")).catch(() => {});
+  }, [t, settings.notePinned]);
+
+  // Tray: pin or unpin the today note.
+  useEffect(() => {
+    const un = listen("toggle-note", () => patchSettings({ notePinned: !settingsRef.current.notePinned }));
+    return () => {
+      un.then((f) => f());
+    };
+  }, [patchSettings]);
 
   // Archive on close / quit.
   useEffect(() => {

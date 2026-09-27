@@ -1,8 +1,8 @@
-//! Desktop only: main and quick-capture windows, tray, global shortcut, taskbar icon and
-//! Velopack updates.
+//! Desktop only: main, quick-capture and today-note windows, tray, global shortcut, taskbar
+//! icon and Velopack updates.
 
 use std::sync::Mutex;
-use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{App, AppHandle, Emitter, Manager, PhysicalPosition, Window, WindowEvent, Wry};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
@@ -44,7 +44,7 @@ pub fn plugins(builder: tauri::Builder<Wry>) -> tauri::Builder<Wry> {
 
 pub fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let handle = app.handle().clone();
-    let menu = build_tray_menu(&handle, "checkst öffnen", "Neue Aufgabe …", "Beenden")?;
+    let menu = build_tray_menu(&handle, "checkst öffnen", "Neue Aufgabe …", "Heute anheften", false, "Beenden")?;
     TrayIconBuilder::with_id(TRAY_ID)
         .icon(app.default_window_icon().cloned().expect("app icon"))
         .tooltip("checkst")
@@ -53,6 +53,10 @@ pub fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         .on_menu_event(|app, event| match event.id.as_ref() {
             "open" => show_main_window(app),
             "new" => show_quick_window(app),
+            // The main window owns the settings; the note follows its "notePinned" flag.
+            "pin" => {
+                let _ = app.emit_to("main", "toggle-note", ());
+            }
             "quit" => request_quit(app),
             _ => {}
         })
@@ -80,6 +84,15 @@ pub fn on_window_event(window: &Window, event: &WindowEvent) {
                 api.prevent_close();
                 let _ = window.hide();
                 let _ = window.emit("main-hidden", ());
+            }
+        }
+        ("note", WindowEvent::CloseRequested { api, .. }) => {
+            // Alt+F4 on the note unpins it; the window itself stays for the next time.
+            let quitting = window.state::<AppState>().quitting.lock().map(|q| *q).unwrap_or(false);
+            if !quitting {
+                api.prevent_close();
+                let _ = window.hide();
+                let _ = window.emit_to("note", "note-close-requested", ());
             }
         }
         ("quick", WindowEvent::Focused(false)) => {
@@ -189,8 +202,8 @@ pub fn set_quick_shortcut(app: AppHandle, state: tauri::State<AppState>, acceler
 }
 
 #[tauri::command]
-pub fn set_tray_labels(app: AppHandle, open: String, new_task: String, quit: String) -> Result<(), String> {
-    let menu = build_tray_menu(&app, &open, &new_task, &quit).map_err(|e| e.to_string())?;
+pub fn set_tray_labels(app: AppHandle, open: String, new_task: String, pin: String, pinned: bool, quit: String) -> Result<(), String> {
+    let menu = build_tray_menu(&app, &open, &new_task, &pin, pinned, &quit).map_err(|e| e.to_string())?;
     if let Some(tray) = app.tray_by_id(TRAY_ID) {
         tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
     }
@@ -264,12 +277,13 @@ pub fn update_url() -> &'static str {
 
 // ---------- tray ----------
 
-fn build_tray_menu(app: &AppHandle, open: &str, new_task: &str, quit: &str) -> tauri::Result<Menu<Wry>> {
+fn build_tray_menu(app: &AppHandle, open: &str, new_task: &str, pin: &str, pinned: bool, quit: &str) -> tauri::Result<Menu<Wry>> {
     let open_i = MenuItem::with_id(app, "open", open, true, None::<&str>)?;
     let new_i = MenuItem::with_id(app, "new", new_task, true, None::<&str>)?;
+    let pin_i = CheckMenuItem::with_id(app, "pin", pin, true, pinned, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
     let quit_i = MenuItem::with_id(app, "quit", quit, true, None::<&str>)?;
-    Menu::with_items(app, &[&open_i, &new_i, &sep, &quit_i])
+    Menu::with_items(app, &[&open_i, &new_i, &pin_i, &sep, &quit_i])
 }
 
 fn request_quit(app: &AppHandle) {

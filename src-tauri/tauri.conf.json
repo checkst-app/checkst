@@ -37,6 +37,22 @@
         "skipTaskbar": true,
         "visible": false,
         "focus": true
+      },
+      {
+        "label": "note",
+        "title": "checkst Heute",
+        "width": 320,
+        "height": 400,
+        "minWidth": 240,
+        "minHeight": 150,
+        "decorations": false,
+        "shadow": true,
+        "resizable": true,
+        "maximizable": false,
+        "minimizable": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false
       }
     ],
     "security": {

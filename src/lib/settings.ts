@@ -38,6 +38,8 @@ export interface Settings {
   autoUpdate: boolean;
   sortBy: SortBy;
   groupBy: GroupBy;
+  /** Windows: "Heute" is pinned as a note above all windows. */
+  notePinned: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -70,6 +72,7 @@ export const defaultSettings: Settings = {
   autoUpdate: true,
   sortBy: "due",
   groupBy: "date",
+  notePinned: false,
 };
 
 export function mergeSettings(raw: unknown): Settings {
