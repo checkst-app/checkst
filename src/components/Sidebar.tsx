@@ -100,8 +100,8 @@ export const Sidebar = forwardRef<HTMLInputElement, Props>(function Sidebar(
 
       <div className="sidebar-scroll">
         <nav className="nav-group">
-          <NavItem icon={Inbox} label={t("nav.all")} count={counts.all} active={is({ kind: "all" })} onClick={() => onView({ kind: "all" })} />
           <NavItem icon={Sun} label={t("nav.today")} count={counts.today} active={is({ kind: "today" })} onClick={() => onView({ kind: "today" })} />
+          <NavItem icon={Inbox} label={t("nav.all")} count={counts.all} active={is({ kind: "all" })} onClick={() => onView({ kind: "all" })} />
           <NavItem
             icon={CalendarDays}
             label={t("nav.upcoming")}
