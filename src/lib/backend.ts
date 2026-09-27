@@ -33,6 +33,12 @@ export interface PickedFile {
   label?: string | null;
 }
 
+/** Android APK download; `total` is -1 while the size is unknown. */
+export interface ApkProgress {
+  downloaded: number;
+  total: number;
+}
+
 export const backend = {
   readTextFile: (path: string) => invoke<TextFile>("read_text_file", { path }),
   writeTextFile: (path: string, content: string, bom: boolean) => invoke<void>("write_text_file", { path, content, bom }),
@@ -63,6 +69,9 @@ export const backend = {
   // Android only
   pickFile: (create: boolean, name: string) => invoke<PickedFile>("pick_file", { create, name }),
   setSystemBars: (dark: boolean, top: string, bottom: string) => invoke<void>("set_system_bars", { dark, top, bottom }),
+  downloadApk: (url: string) => invoke<void>("download_apk", { url }),
+  apkProgress: () => invoke<ApkProgress>("apk_progress"),
+  installApk: (askPermission: boolean) => invoke<{ needsPermission: boolean }>("install_apk", { askPermission }),
 };
 
 export function fileName(path: string): string {

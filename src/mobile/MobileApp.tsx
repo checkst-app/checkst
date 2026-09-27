@@ -2,6 +2,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import { CalendarDays, Inbox, LayoutList, Search, Settings, Sun, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Providers, useSettingsState } from "../App";
+import { backend } from "../lib/backend";
 import { formatShort, todayIso } from "../lib/dates";
 import { type I18nKey, useT } from "../lib/i18n";
 import type { Settings as SettingsT } from "../lib/settings";
@@ -13,7 +14,7 @@ import { AppBar, IconButton, SnackProvider, useSnack, useSystemBars } from "./co
 import { EditSheet } from "./EditSheet";
 import { ListsScreen } from "./ListsScreen";
 import { QuickAdd } from "./QuickAdd";
-import { type MobileUpdate, SettingsScreen } from "./SettingsScreen";
+import { type MobileUpdate, SettingsScreen, updatePending } from "./SettingsScreen";
 import { SetupScreen } from "./SetupScreen";
 import { CollapsedGroup, Group, TaskRow } from "./TaskList";
 import { isNewer, latestRelease } from "./updates";
@@ -83,6 +84,56 @@ function MobileMain({ settings }: { settings: SettingsT }) {
     if (settings.autoUpdate) checkUpdate(false);
   }, []);
 
+  const updateRef = useRef(update);
+  updateRef.current = update;
+
+  // Opens the system installer for the downloaded APK. Without "Install unknown apps" Android
+  // shows that setting first; checkst tries again when it comes back to the foreground.
+  const openInstaller = useCallback(async (version: string, url: string, askPermission: boolean) => {
+    try {
+      const r = await backend.installApk(askPermission);
+      setUpdate({ phase: r.needsPermission ? "permission" : "downloaded", version, url });
+    } catch {
+      // The APK is gone (e.g. the cache was cleared): the next tap downloads it again.
+      setUpdate({ phase: "downloadError", version, url });
+    }
+  }, []);
+
+  const installUpdate = useCallback(async () => {
+    const u = updateRef.current;
+    if (!("version" in u) || u.phase === "downloading") return;
+    const { version, url } = u;
+    if (u.phase === "permission" || u.phase === "downloaded") return openInstaller(version, url, true);
+    setUpdate({ phase: "downloading", version, url, progress: null });
+    const poll = window.setInterval(() => {
+      backend
+        .apkProgress()
+        .then(({ downloaded, total }) =>
+          setUpdate((cur) => (cur.phase === "downloading" ? { ...cur, progress: total > 0 ? Math.min(1, downloaded / total) : null } : cur)),
+        )
+        .catch(() => {});
+    }, 300);
+    try {
+      await backend.downloadApk(url);
+    } catch {
+      setUpdate({ phase: "downloadError", version, url });
+      return;
+    } finally {
+      window.clearInterval(poll);
+    }
+    await openInstaller(version, url, true);
+  }, [openInstaller]);
+
+  // Back from the "Install unknown apps" setting: open the installer if it is allowed now.
+  useEffect(() => {
+    const onVisible = () => {
+      const u = updateRef.current;
+      if (document.visibilityState === "visible" && u.phase === "permission") openInstaller(u.version, u.url, false);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [openInstaller]);
+
   useSystemBars("--surface", !!editing, !showSettings);
 
   // The snackbar floats just above quick add and navigation.
@@ -106,7 +157,13 @@ function MobileMain({ settings }: { settings: SettingsT }) {
     <TodoContext.Provider value={store}>
       <div className={`m-app ${typing ? "typing" : ""}`}>
         {showSettings ? (
-          <SettingsScreen onBack={() => setShowSettings(false)} version={version} update={update} onCheckUpdate={() => checkUpdate(true)} />
+          <SettingsScreen
+            onBack={() => setShowSettings(false)}
+            version={version}
+            update={update}
+            onCheckUpdate={() => checkUpdate(true)}
+            onInstallUpdate={installUpdate}
+          />
         ) : (
           <>
             {view ? (
@@ -118,7 +175,7 @@ function MobileMain({ settings }: { settings: SettingsT }) {
                 onBack={pushed ? () => setPushed(null) : undefined}
                 onSettings={() => setShowSettings(true)}
                 onEdit={setEditing}
-                updateDot={update.phase === "available"}
+                updateDot={updatePending(update)}
               />
             ) : (
               <ListsScreen
@@ -128,7 +185,7 @@ function MobileMain({ settings }: { settings: SettingsT }) {
                   openSearch();
                 }}
                 onSettings={() => setShowSettings(true)}
-                updateDot={update.phase === "available"}
+                updateDot={updatePending(update)}
               />
             )}
             <div className="m-bottom" ref={bottom}>

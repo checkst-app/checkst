@@ -15,7 +15,17 @@ export type MobileUpdate =
   | { phase: "checking" }
   | { phase: "uptodate" }
   | { phase: "available"; version: string; url: string }
+  /** progress 0…1, null while the size is unknown */
+  | { phase: "downloading"; version: string; url: string; progress: number | null }
+  /** Waiting for "Install unknown apps"; retried when checkst comes back. */
+  | { phase: "permission"; version: string; url: string }
+  /** The installer was opened; tapping opens it again (e.g. after cancelling). */
+  | { phase: "downloaded"; version: string; url: string }
+  | { phase: "downloadError"; version: string; url: string }
   | { phase: "error" };
+
+/** An update is waiting for the user: shows the dot on the settings icon. */
+export const updatePending = (u: MobileUpdate) => ["available", "permission", "downloaded", "downloadError"].includes(u.phase);
 
 function fileLabel(path: string, label: string, t: ReturnType<typeof useT>["t"]) {
   if (!path) return t("m.notChosen");
@@ -23,7 +33,19 @@ function fileLabel(path: string, label: string, t: ReturnType<typeof useT>["t"])
   return path.startsWith("content://") ? path : `${t("m.appStorage")} · ${path.split(/[\\/]/).pop()}`;
 }
 
-export function SettingsScreen({ onBack, version, update, onCheckUpdate }: { onBack: () => void; version: string; update: MobileUpdate; onCheckUpdate: () => void }) {
+export function SettingsScreen({
+  onBack,
+  version,
+  update,
+  onCheckUpdate,
+  onInstallUpdate,
+}: {
+  onBack: () => void;
+  version: string;
+  update: MobileUpdate;
+  onCheckUpdate: () => void;
+  onInstallUpdate: () => void;
+}) {
   const { t, lang } = useT();
   const { settings, update: set } = useSettings();
   const store = useTodos();
@@ -63,9 +85,19 @@ export function SettingsScreen({ onBack, version, update, onCheckUpdate }: { onB
         ? t("m.upToDate")
         : update.phase === "available"
           ? t("m.updateAvailable", { v: update.version })
-          : update.phase === "error"
-            ? t("m.updateError")
-            : t("m.checkUpdatesDesc");
+          : update.phase === "downloading"
+            ? update.progress === null
+              ? t("m.updateDownloading", { v: update.version })
+              : t("m.updateDownloadingPct", { v: update.version, p: Math.round(update.progress * 100) })
+            : update.phase === "permission"
+              ? t("m.updatePermission")
+              : update.phase === "downloaded"
+                ? t("m.updateDownloaded", { v: update.version })
+                : update.phase === "downloadError"
+                  ? t("m.updateDownloadError")
+                  : update.phase === "error"
+                    ? t("m.updateError")
+                    : t("m.checkUpdatesDesc");
 
   return (
     <>
@@ -146,8 +178,12 @@ export function SettingsScreen({ onBack, version, update, onCheckUpdate }: { onB
             tone="accent"
             label={t("m.checkUpdates")}
             sub={updateSub}
-            onClick={() => (update.phase === "available" ? openUrl(update.url).catch(() => {}) : onCheckUpdate())}
-            right={update.phase === "available" ? <span className="m-dot static" /> : undefined}
+            onClick={() => {
+              if (update.phase === "downloading") return;
+              if (updatePending(update)) onInstallUpdate();
+              else onCheckUpdate();
+            }}
+            right={updatePending(update) ? <span className="m-dot static" /> : undefined}
           />
           <ListRow icon={GithubIcon} label={t("m.source")} right={<ExternalLink size={16} className="m-chevron" />} onClick={() => openUrl(REPO_URL).catch(() => {})} />
         </Section>

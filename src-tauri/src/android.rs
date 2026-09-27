@@ -1,7 +1,8 @@
-//! Android only: todo.txt access through the Storage Access Framework.
+//! Android only: todo.txt access through the Storage Access Framework, and in-app updates.
 //!
 //! A picked file is a `content://` URI with a persisted read/write grant, so checkst can keep
-//! using a todo.txt in a Syncthing, OneDrive or Google Drive folder. The Kotlin side lives in
+//! using a todo.txt in a Syncthing, OneDrive or Google Drive folder. Updates download the APK of
+//! the latest GitHub release and open the system installer. The Kotlin side lives in
 //! `gen/android/app/src/main/java/de/checkst/app/CheckstPlugin.kt`.
 
 use serde::{Deserialize, Serialize};
@@ -104,4 +105,44 @@ pub async fn set_system_bars(app: AppHandle, dark: bool, top: String, bottom: St
     tauri::async_runtime::spawn_blocking(move || call::<serde_json::Value>(&app, "systemBars", BarsArgs { dark, top: &top, bottom: &bottom }).map(|_| ()))
         .await
         .map_err(|e| e.to_string())?
+}
+
+// ---------- updates ----------
+
+async fn native<T: serde::de::DeserializeOwned + Send + 'static>(app: AppHandle, command: &'static str, payload: serde_json::Value) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(move || call(&app, command, payload))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+/// Downloads the release APK into the app's cache; returns when it is complete.
+#[tauri::command]
+pub async fn download_apk(app: AppHandle, url: String) -> Result<(), String> {
+    native::<serde_json::Value>(app, "downloadApk", serde_json::json!({ "url": url })).await.map(|_| ())
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ApkProgress {
+    pub downloaded: u64,
+    /// -1 while the size is unknown.
+    pub total: i64,
+}
+
+#[tauri::command]
+pub async fn apk_progress(app: AppHandle) -> Result<ApkProgress, String> {
+    native(app, "apkProgress", serde_json::json!({})).await
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallStarted {
+    /// "Install unknown apps" is not allowed yet; its settings page was opened instead.
+    pub needs_permission: bool,
+}
+
+/// Opens the system installer for the downloaded APK. With `ask_permission`, a missing
+/// "Install unknown apps" permission opens that settings page instead.
+#[tauri::command]
+pub async fn install_apk(app: AppHandle, ask_permission: bool) -> Result<InstallStarted, String> {
+    native(app, "installApk", serde_json::json!({ "askPermission": ask_permission })).await
 }

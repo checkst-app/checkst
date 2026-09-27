@@ -190,6 +190,9 @@ pub fn run() {
         watch_files,
         android::pick_file,
         android::set_system_bars,
+        android::download_apk,
+        android::apk_progress,
+        android::install_apk,
     ]);
 
     builder

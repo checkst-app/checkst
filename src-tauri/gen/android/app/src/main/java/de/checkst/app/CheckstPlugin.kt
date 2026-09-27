@@ -2,11 +2,17 @@ package de.checkst.app
 
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
+import android.provider.Settings
+import android.webkit.WebView
 import androidx.activity.result.ActivityResult
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import app.tauri.annotation.ActivityCallback
 import app.tauri.annotation.Command
@@ -15,8 +21,11 @@ import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.Invoke
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
+import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
 
 @InvokeArg
 class PickArgs {
@@ -42,13 +51,37 @@ class BarsArgs {
   var bottom: String = "#FFFFFF"
 }
 
+@InvokeArg
+class UrlArgs {
+  lateinit var url: String
+}
+
+@InvokeArg
+class InstallArgs {
+  /** Open the "Install unknown apps" setting if it is still off. */
+  var askPermission: Boolean = true
+}
+
 /**
  * todo.txt access through the Storage Access Framework, called from src-tauri/src/android.rs.
  * Picked files keep a persisted read/write grant, so they stay usable after a restart.
+ * Also downloads release APKs and hands them to the system installer (in-app updates).
  */
 @TauriPlugin
 class CheckstPlugin(private val activity: Activity) : Plugin(activity) {
   private val resolver get() = activity.contentResolver
+
+  // Progress of the running APK download, polled by the web app.
+  @Volatile private var apkDownloaded = 0L
+  @Volatile private var apkTotal = -1L
+  private val apkDir get() = File(activity.cacheDir, "updates")
+  private val apkFile get() = File(apkDir, "checkst-update.apk")
+
+  override fun load(webView: WebView) {
+    super.load(webView)
+    // A new start means the last update is installed (or was abandoned): drop the old APK.
+    Thread { apkDir.deleteRecursively() }.start()
+  }
 
   /** Runs file work off the UI thread and turns exceptions into rejections. */
   private fun io(invoke: Invoke, block: () -> Unit) {
@@ -178,6 +211,103 @@ class CheckstPlugin(private val activity: Activity) : Plugin(activity) {
         android.util.Log.w("checkst", "systemBars(${args.top}, ${args.bottom}): $e")
         invoke.reject(e.message ?: e.toString())
       }
+    }
+  }
+
+  /** Downloads a release APK into the cache; resolves when it is complete and checked. */
+  @Command
+  fun downloadApk(invoke: Invoke) {
+    val args = invoke.parseArgs(UrlArgs::class.java)
+    io(invoke) {
+      apkDownloaded = 0
+      apkTotal = -1
+      apkDir.mkdirs()
+      val part = File(apkDir, "checkst-update.download.apk")
+      // GitHub redirects release downloads to its CDN (https to https, followed automatically).
+      val conn = URL(args.url).openConnection() as HttpURLConnection
+      conn.connectTimeout = 15_000
+      conn.readTimeout = 30_000
+      try {
+        if (conn.responseCode !in 200..299) throw IOException("HTTP ${conn.responseCode}")
+        apkTotal = conn.contentLengthLong
+        conn.inputStream.use { input ->
+          part.outputStream().use { out ->
+            val buf = ByteArray(64 * 1024)
+            while (true) {
+              val n = input.read(buf)
+              if (n < 0) break
+              out.write(buf, 0, n)
+              apkDownloaded += n
+            }
+          }
+        }
+      } finally {
+        conn.disconnect()
+      }
+      // Only hand over an APK of this app; the installer itself checks signature and version.
+      if (archiveInfo(part)?.packageName != activity.packageName) {
+        part.delete()
+        throw IOException("The download is not a checkst APK")
+      }
+      apkFile.delete()
+      if (!part.renameTo(apkFile)) throw IOException("Cannot store the update")
+      invoke.resolve(JSObject())
+    }
+  }
+
+  @Command
+  fun apkProgress(invoke: Invoke) {
+    val ret = JSObject()
+    ret.put("downloaded", apkDownloaded)
+    ret.put("total", apkTotal)
+    invoke.resolve(ret)
+  }
+
+  /**
+   * Opens the system installer for the downloaded APK ("Update this app?"). Android 8+ first
+   * needs "Install unknown apps" for checkst: then `needsPermission` is set and, with
+   * `askPermission`, that settings page opens; the web app retries when checkst is back.
+   */
+  @Command
+  fun installApk(invoke: Invoke) {
+    val args = invoke.parseArgs(InstallArgs::class.java)
+    val file = apkFile
+    if (!file.exists()) {
+      invoke.reject("No update downloaded")
+      return
+    }
+    val ret = JSObject()
+    val allowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.O || activity.packageManager.canRequestPackageInstalls()
+    ret.put("needsPermission", !allowed)
+    val intent = if (allowed) {
+      val uri = FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", file)
+      Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, "application/vnd.android.package-archive")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+      }
+    } else if (args.askPermission) {
+      Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${activity.packageName}"))
+    } else {
+      invoke.resolve(ret)
+      return
+    }
+    activity.runOnUiThread {
+      try {
+        activity.startActivity(intent)
+        invoke.resolve(ret)
+      } catch (e: Exception) {
+        invoke.reject(e.message ?: e.toString())
+      }
+    }
+  }
+
+  private fun archiveInfo(file: File): PackageInfo? {
+    val pm = activity.packageManager
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      pm.getPackageArchiveInfo(file.path, PackageManager.PackageInfoFlags.of(0))
+    } else {
+      @Suppress("DEPRECATION")
+      pm.getPackageArchiveInfo(file.path, 0)
     }
   }
 

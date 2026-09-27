@@ -1,5 +1,6 @@
-// Android updates: the APK is attached to every GitHub release. The app only checks and
-// links to the download; Android installs it over the old version.
+// Android updates: the APK is attached to every GitHub release. The app checks for it here,
+// downloads it itself and opens the system installer, which installs it over the old version
+// (same signing key, so the todo.txt grant and settings stay).
 
 const REPO = "checkst-app/checkst";
 export const REPO_URL = `https://github.com/${REPO}`;
