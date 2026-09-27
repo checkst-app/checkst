@@ -25,6 +25,20 @@ export function sameView(a: View, b: View) {
   return true;
 }
 
+/** Tokens a task created in this view gets, so that it shows up there. */
+export function viewDefaults(view: View, today: string): string[] {
+  switch (view.kind) {
+    case "today":
+      return [`due:${today}`];
+    case "project":
+      return [`+${view.name}`];
+    case "context":
+      return [`@${view.name}`];
+    default:
+      return [];
+  }
+}
+
 function inView(t: Task, view: View, today: string): boolean {
   switch (view.kind) {
     case "all":

@@ -6,7 +6,7 @@ import { useT } from "../lib/i18n";
 import { useSettings } from "../lib/settings";
 import { useTodos } from "../lib/store";
 import { applySuggestion, ghostFor, highlight, type Suggestion, suggestionsFor, tokenAtCaret, tokenStats } from "../lib/suggest";
-import { lineFromInput, parseLine } from "../lib/todo";
+import { lineFromInput, parseLine, withDefaults } from "../lib/todo";
 import { useSnack } from "./common";
 
 /** "(A) …" → "(B) …" → "(C) …" → "…" */
@@ -44,7 +44,7 @@ export function QuickAdd({ extraTokens = [], onFocusChange }: { extraTokens?: st
       : [];
   const ghost = caret === value.length ? ghostFor(token, suggestions[0]) : "";
 
-  const withExtras = (v: string) => [v.trim(), ...extraTokens.filter((x) => !v.split(/\s+/).includes(x))].filter(Boolean).join(" ");
+  const withExtras = (v: string) => withDefaults(v, extraTokens);
   const preview = value.trim()
     ? lineFromInput(withExtras(value), { creationDate: settings.addCreationDate ? today : undefined, defaultPriority: settings.defaultPriority || undefined })
     : "";

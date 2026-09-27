@@ -22,8 +22,8 @@ import { todayIso } from "../lib/dates";
 import { useT } from "../lib/i18n";
 import { type GroupBy, type SortBy, useSettings } from "../lib/settings";
 import { useTodos } from "../lib/store";
-import type { Task } from "../lib/todo";
-import { countTasks, type Filters, groupTasks, noFilters, selectTasks, type View } from "../lib/views";
+import { type Task, withDefaults } from "../lib/todo";
+import { countTasks, type Filters, groupTasks, noFilters, selectTasks, type View, viewDefaults } from "../lib/views";
 import { SettingsView, type SettingsTab } from "./SettingsView";
 import { TaskDialog } from "./TaskDialog";
 
@@ -41,7 +41,7 @@ function useToday() {
 export function MainView({ update, onCheckUpdate }: { update: UpdateState; onCheckUpdate: () => void }) {
   const store = useTodos();
   const today = useToday();
-  const [view, setView] = useState<View>({ kind: "all" });
+  const [view, setView] = useState<View>({ kind: "today" });
   const [page, setPage] = useState<"tasks" | "settings">("tasks");
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("files");
   const [search, setSearch] = useState("");
@@ -143,6 +143,7 @@ export function MainView({ update, onCheckUpdate }: { update: UpdateState; onChe
             onClose={() => setDialog(null)}
             defaultProject={view.kind === "project" ? view.name : undefined}
             defaultContext={view.kind === "context" ? view.name : undefined}
+            defaultDue={view.kind === "today" ? today : undefined}
           />
         )}
       </div>
@@ -373,14 +374,14 @@ function TasksPane({
         </div>
       </header>
 
-      <QuickAdd inputRef={quickRef} defaultToken={view.kind === "project" ? `+${view.name}` : view.kind === "context" ? `@${view.name}` : undefined} />
+      <QuickAdd inputRef={quickRef} defaults={viewDefaults(view, today)} />
 
       <div className="task-list" ref={listRef}>
         {isEmpty && (
           <div className="empty">
             <CircleCheck size={28} />
             <b>{t("empty.title")}</b>
-            <span>{search ? t("empty.search", { q: search }) : view.kind === "all" ? t("empty.all") : t("empty.filtered")}</span>
+            <span>{search ? t("empty.search", { q: search }) : view.kind === "all" || view.kind === "today" ? t("empty.all") : t("empty.filtered")}</span>
           </div>
         )}
         {groups.map((g) => {
@@ -479,17 +480,15 @@ function TasksPane({
   );
 }
 
-function QuickAdd({ inputRef, defaultToken }: { inputRef: React.RefObject<SyntaxInputHandle | null>; defaultToken?: string }) {
+function QuickAdd({ inputRef, defaults }: { inputRef: React.RefObject<SyntaxInputHandle | null>; defaults: string[] }) {
   const { t } = useT();
   const store = useTodos();
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
 
   const submit = async () => {
-    let v = value.trim();
-    if (!v) return;
-    if (defaultToken && !v.split(" ").includes(defaultToken)) v = `${v} ${defaultToken}`;
-    await store.addFromInput(v);
+    if (!value.trim()) return;
+    await store.addFromInput(withDefaults(value, defaults));
     setValue("");
   };
 

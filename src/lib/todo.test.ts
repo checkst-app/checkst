@@ -11,6 +11,7 @@ import {
   setTag,
   splitFile,
   uncompleteLine,
+  withDefaults,
 } from "./todo";
 
 describe("parseLine", () => {
@@ -90,6 +91,13 @@ describe("tokens and tags", () => {
     expect(addToken("Test due:2026-10-02", "@büro")).toBe("Test @büro due:2026-10-02");
     expect(addToken("Test @büro", "@büro")).toBe("Test @büro");
     expect(removeToken("Test @büro +X", "@büro")).toBe("Test +X");
+  });
+
+  it("appends view defaults unless the input already has them", () => {
+    expect(withDefaults(" Test ", ["due:2026-09-27"])).toBe("Test due:2026-09-27");
+    expect(withDefaults("Test due:2026-10-01", ["due:2026-09-27"])).toBe("Test due:2026-10-01");
+    expect(withDefaults("Test +Umzug", ["+Umzug"])).toBe("Test +Umzug");
+    expect(withDefaults("(A) Test", ["@büro"])).toBe("(A) Test @büro");
   });
 });
 

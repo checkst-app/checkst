@@ -196,6 +196,19 @@ export function addToken(body: string, token: string): string {
   return words.join(" ");
 }
 
+/**
+ * Appends default tokens (+Projekt, @Kontext, due:…) to typed input unless it already has them.
+ * A default tag is skipped when the input has a tag with the same key, e.g. its own due: date.
+ */
+export function withDefaults(input: string, defaults: string[]): string {
+  const words = input.split(/\s+/).filter(Boolean);
+  const missing = defaults.filter((d) => {
+    const key = asTag(d)?.[0];
+    return key ? !words.some((w) => asTag(w)?.[0] === key) : !words.includes(d);
+  });
+  return [...words, ...missing].join(" ");
+}
+
 export function removeToken(body: string, token: string): string {
   return body
     .split(/\s+/)

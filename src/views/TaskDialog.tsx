@@ -15,9 +15,10 @@ interface Props {
   onClose: () => void;
   defaultProject?: string;
   defaultContext?: string;
+  defaultDue?: string;
 }
 
-export function TaskDialog({ mode, task, onClose, defaultProject, defaultContext }: Props) {
+export function TaskDialog({ mode, task, onClose, defaultProject, defaultContext, defaultDue }: Props) {
   const { t, lang } = useT();
   const { settings } = useSettings();
   const store = useTodos();
@@ -34,7 +35,7 @@ export function TaskDialog({ mode, task, onClose, defaultProject, defaultContext
 
   const [description, setDescription] = useState(initialDescription);
   const [priority, setPriority] = useState<string>(task?.priority ?? (mode === "create" ? settings.defaultPriority : ""));
-  const [due, setDue] = useState(task?.due ?? "");
+  const [due, setDue] = useState(task ? task.due ?? "" : defaultDue ?? "");
   const [done, setDone] = useState(task?.done ?? false);
   const [error, setError] = useState<string>();
   const creationDate = task ? task.creationDate : settings.addCreationDate ? today : undefined;

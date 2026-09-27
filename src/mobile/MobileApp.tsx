@@ -7,7 +7,7 @@ import { type I18nKey, useT } from "../lib/i18n";
 import type { Settings as SettingsT } from "../lib/settings";
 import { TodoContext, useTodoStore, useTodos } from "../lib/store";
 import { completeLine, type Task, uncompleteLine } from "../lib/todo";
-import { groupTasks, noFilters, selectTasks, type View } from "../lib/views";
+import { groupTasks, noFilters, selectTasks, type View, viewDefaults } from "../lib/views";
 import { useBack } from "./back";
 import { AppBar, IconButton, SnackProvider, useSnack, useSystemBars } from "./common";
 import { EditSheet } from "./EditSheet";
@@ -135,7 +135,7 @@ function MobileMain({ settings }: { settings: SettingsT }) {
               {view && view.kind !== "done" && (
                 <QuickAdd
                   onFocusChange={setTyping}
-                  extraTokens={view.kind === "project" ? [`+${view.name}`] : view.kind === "context" ? [`@${view.name}`] : []}
+                  extraTokens={viewDefaults(view, todayIso())}
                 />
               )}
               {!typing && (
