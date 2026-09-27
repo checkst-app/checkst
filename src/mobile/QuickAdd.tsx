@@ -8,6 +8,7 @@ import { useTodos } from "../lib/store";
 import { applySuggestion, ghostFor, highlight, type Suggestion, suggestionsFor, tokenAtCaret, tokenStats } from "../lib/suggest";
 import { lineFromInput, parseLine, withDefaults } from "../lib/todo";
 import { useSnack } from "./common";
+import { useFeedback } from "./feedback";
 
 /** "(A) …" → "(B) …" → "(C) …" → "…" */
 function cyclePriority(value: string): string {
@@ -27,6 +28,7 @@ export function QuickAdd({ extraTokens = [], onFocusChange }: { extraTokens?: st
   const { settings } = useSettings();
   const store = useTodos();
   const snack = useSnack();
+  const feedback = useFeedback();
   const [value, setValue] = useState("");
   const [caret, setCaret] = useState(0);
   const [focused, setFocused] = useState(false);
@@ -104,6 +106,7 @@ export function QuickAdd({ extraTokens = [], onFocusChange }: { extraTokens?: st
     try {
       const line = await store.addFromInput(withExtras(typed));
       if (line === undefined) return;
+      feedback("tick");
       const added = parseLine(raw, line);
       snack(t("m.added"), added && { label: t("m.undo"), run: () => void store.deleteTask(added).catch(() => {}) });
     } catch {

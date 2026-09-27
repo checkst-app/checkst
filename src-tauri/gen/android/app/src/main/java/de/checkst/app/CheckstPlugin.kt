@@ -1,15 +1,20 @@
 package de.checkst.app
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.SoundPool
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.provider.Settings
+import android.view.HapticFeedbackConstants
 import android.webkit.WebView
 import androidx.activity.result.ActivityResult
 import androidx.core.content.FileProvider
@@ -62,10 +67,19 @@ class InstallArgs {
   var askPermission: Boolean = true
 }
 
+@InvokeArg
+class FeedbackArgs {
+  /** "confirm", "tick" or "threshold" */
+  var haptic: String? = null
+  /** "complete" */
+  var sound: String? = null
+}
+
 /**
  * todo.txt access through the Storage Access Framework, called from src-tauri/src/android.rs.
  * Picked files keep a persisted read/write grant, so they stay usable after a restart.
- * Also downloads release APKs and hands them to the system installer (in-app updates).
+ * Also downloads release APKs and hands them to the system installer (in-app updates), and
+ * gives haptic and sound feedback.
  */
 @TauriPlugin
 class CheckstPlugin(private val activity: Activity) : Plugin(activity) {
@@ -77,10 +91,27 @@ class CheckstPlugin(private val activity: Activity) : Plugin(activity) {
   private val apkDir get() = File(activity.cacheDir, "updates")
   private val apkFile get() = File(apkDir, "checkst-update.apk")
 
+  // The "checked off" sound, played as a system sound.
+  private var sounds: SoundPool? = null
+  private var completeSound = 0
+
   override fun load(webView: WebView) {
     super.load(webView)
     // A new start means the last update is installed (or was abandoned): drop the old APK.
     Thread { apkDir.deleteRecursively() }.start()
+    val attributes = AudioAttributes.Builder()
+      .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+      .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+      .build()
+    sounds = SoundPool.Builder().setMaxStreams(2).setAudioAttributes(attributes).build().also {
+      completeSound = it.load(activity, R.raw.complete, 1)
+    }
+  }
+
+  override fun onDestroy() {
+    sounds?.release()
+    sounds = null
+    super.onDestroy()
   }
 
   /** Runs file work off the UI thread and turns exceptions into rejections. */
@@ -298,6 +329,31 @@ class CheckstPlugin(private val activity: Activity) : Plugin(activity) {
       } catch (e: Exception) {
         invoke.reject(e.message ?: e.toString())
       }
+    }
+  }
+
+  /**
+   * Haptic and sound feedback for task actions. Haptics follow the system's "touch feedback"
+   * setting (no vibrate permission needed); the sound only plays in normal ringer mode.
+   */
+  @Command
+  fun feedback(invoke: Invoke) {
+    val args = invoke.parseArgs(FeedbackArgs::class.java)
+    activity.runOnUiThread {
+      val haptic = when (args.haptic) {
+        "confirm" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+        "tick" -> HapticFeedbackConstants.KEYBOARD_TAP
+        "threshold" ->
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) HapticFeedbackConstants.GESTURE_THRESHOLD_ACTIVATE
+          else HapticFeedbackConstants.CONTEXT_CLICK
+        else -> null
+      }
+      if (haptic != null) activity.window.decorView.performHapticFeedback(haptic)
+      if (args.sound == "complete") {
+        val audio = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        if (audio.ringerMode == AudioManager.RINGER_MODE_NORMAL) sounds?.play(completeSound, 1f, 1f, 1, 0, 1f)
+      }
+      invoke.resolve(JSObject())
     }
   }
 

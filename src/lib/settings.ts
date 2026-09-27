@@ -40,6 +40,10 @@ export interface Settings {
   groupBy: GroupBy;
   /** Windows: "Heute" is pinned as a note above all windows. */
   notePinned: boolean;
+  /** Android: vibrate when checking off, swiping and adding. */
+  haptics: boolean;
+  /** Android: soft sound when checking off (never in silent or vibrate mode). */
+  sounds: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -73,6 +77,8 @@ export const defaultSettings: Settings = {
   sortBy: "due",
   groupBy: "date",
   notePinned: false,
+  haptics: true,
+  sounds: true,
 };
 
 export function mergeSettings(raw: unknown): Settings {

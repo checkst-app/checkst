@@ -193,6 +193,7 @@ pub fn run() {
         android::download_apk,
         android::apk_progress,
         android::install_apk,
+        android::feedback,
     ]);
 
     builder

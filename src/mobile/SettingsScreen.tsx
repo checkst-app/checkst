@@ -1,5 +1,21 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Archive, CalendarPlus, Check, ExternalLink, FilePlus, FileText, FolderOpen, Info, Moon, PackageCheck, RefreshCw, Smartphone, Sun } from "lucide-react";
+import {
+  Archive,
+  CalendarPlus,
+  Check,
+  ExternalLink,
+  FilePlus,
+  FileText,
+  FolderOpen,
+  Info,
+  Moon,
+  PackageCheck,
+  RefreshCw,
+  Smartphone,
+  Sun,
+  Vibrate,
+  Volume2,
+} from "lucide-react";
 import { useState } from "react";
 import { backend } from "../lib/backend";
 import { useT } from "../lib/i18n";
@@ -125,6 +141,21 @@ export function SettingsScreen({
           </div>
           <p className="m-note">{t("m.fileNote")}</p>
         </section>
+
+        <Section title={t("m.feedback")}>
+          <ListRow
+            icon={Vibrate}
+            label={t("m.haptics")}
+            sub={t("m.hapticsDesc")}
+            right={<Switch on={settings.haptics} onChange={(v) => set({ haptics: v })} label={t("m.haptics")} />}
+          />
+          <ListRow
+            icon={Volume2}
+            label={t("m.sounds")}
+            sub={t("m.soundsDesc")}
+            right={<Switch on={settings.sounds} onChange={(v) => set({ sounds: v })} label={t("m.sounds")} />}
+          />
+        </Section>
 
         <Section title={t("m.appearance")}>
           <div className="m-row-block">

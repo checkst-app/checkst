@@ -12,6 +12,7 @@ import { groupTasks, noFilters, selectTasks, type View, viewDefaults } from "../
 import { useBack } from "./back";
 import { AppBar, IconButton, SnackProvider, useSnack, useSystemBars } from "./common";
 import { EditSheet } from "./EditSheet";
+import { useFeedback } from "./feedback";
 import { ListsScreen } from "./ListsScreen";
 import { QuickAdd } from "./QuickAdd";
 import { type MobileUpdate, SettingsScreen, updatePending } from "./SettingsScreen";
@@ -277,6 +278,7 @@ function ListScreen({
   const { t, lang } = useT();
   const store = useTodos();
   const snack = useSnack();
+  const feedback = useFeedback();
   const today = todayIso();
   const query = search ?? "";
   const sel = useMemo(() => selectTasks(store.tasks, store.archived, view, query, noFilters, today), [store.tasks, store.archived, view, query, today]);
@@ -304,6 +306,8 @@ function ListScreen({
 
   const toggle = async (task: Task) => {
     const next = task.done ? uncompleteLine(task) : completeLine(task, today);
+    if (task.done) feedback("tick");
+    else feedback("confirm", "complete");
     await store.toggleDone(task).catch(() => {});
     snack(task.done ? t("m.reopened") : t("m.completed"), {
       label: t("m.undo"),

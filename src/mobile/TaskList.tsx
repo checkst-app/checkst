@@ -4,6 +4,7 @@ import { ContextChip, PriorityBadge, ProjectChip } from "../components/ui";
 import { dueStatus, formatShort, type Lang } from "../lib/dates";
 import { type TFunc, useT } from "../lib/i18n";
 import { bodyParts, type BodyPart, type Task } from "../lib/todo";
+import { useFeedback } from "./feedback";
 
 /**
  * Tokens keep their typed position: +project/@context in the middle of the text stay inline,
@@ -57,12 +58,15 @@ export function TaskRow({
   const [leaving, setLeaving] = useState(false);
   const drag = useRef<{ x: number; y: number; id: number; active: boolean; cancelled: boolean } | null>(null);
   const moved = useRef(false);
+  const armed = useRef(false);
+  const feedback = useFeedback();
 
   // Swipe right to check off (or reopen); vertical movement keeps scrolling the list.
   const onPointerDown = (e: React.PointerEvent) => {
     if (readOnly || leaving) return;
     drag.current = { x: e.clientX, y: e.clientY, id: e.pointerId, active: false, cancelled: false };
     moved.current = false;
+    armed.current = false;
   };
   const onPointerMove = (e: React.PointerEvent) => {
     const d = drag.current;
@@ -80,7 +84,12 @@ export function TaskRow({
       } else return;
     }
     moved.current = true;
-    setDx(Math.max(0, Math.min(mx - 10, 180)));
+    const next = Math.max(0, Math.min(mx - 10, 180));
+    // A tick as the swipe arms: letting go now checks the task off (or reopens it).
+    const nowArmed = next >= SWIPE_DONE;
+    if (nowArmed && !armed.current) feedback("threshold");
+    armed.current = nowArmed;
+    setDx(next);
   };
   const onPointerUp = () => {
     const d = drag.current;

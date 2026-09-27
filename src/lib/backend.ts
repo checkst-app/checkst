@@ -72,6 +72,7 @@ export const backend = {
   downloadApk: (url: string) => invoke<void>("download_apk", { url }),
   apkProgress: () => invoke<ApkProgress>("apk_progress"),
   installApk: (askPermission: boolean) => invoke<{ needsPermission: boolean }>("install_apk", { askPermission }),
+  feedback: (haptic?: string, sound?: string) => invoke<void>("feedback", { haptic: haptic ?? null, sound: sound ?? null }),
 };
 
 export function fileName(path: string): string {

@@ -1,4 +1,5 @@
-//! Android only: todo.txt access through the Storage Access Framework, and in-app updates.
+//! Android only: todo.txt access through the Storage Access Framework, in-app updates and
+//! haptic/sound feedback.
 //!
 //! A picked file is a `content://` URI with a persisted read/write grant, so checkst can keep
 //! using a todo.txt in a Syncthing, OneDrive or Google Drive folder. Updates download the APK of
@@ -145,4 +146,12 @@ pub struct InstallStarted {
 #[tauri::command]
 pub async fn install_apk(app: AppHandle, ask_permission: bool) -> Result<InstallStarted, String> {
     native(app, "installApk", serde_json::json!({ "askPermission": ask_permission })).await
+}
+
+// ---------- feedback ----------
+
+/// Haptic ("confirm", "tick", "threshold") and sound ("complete") feedback for task actions.
+#[tauri::command]
+pub async fn feedback(app: AppHandle, haptic: Option<String>, sound: Option<String>) -> Result<(), String> {
+    native::<serde_json::Value>(app, "feedback", serde_json::json!({ "haptic": haptic, "sound": sound })).await.map(|_| ())
 }
