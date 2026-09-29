@@ -1,13 +1,21 @@
 # Checks every push and pull request: parser tests, type-check, website build and Rust tests.
+# Mockups and docs need no check; website-only pushes are built by pages.yml anyway.
 name: CI
 
 on:
   push:
     branches: [main]
+    paths-ignore: ["website/**", "design/**", "**.md", "LICENSE"]
   pull_request:
+    paths-ignore: ["design/**", "**.md", "LICENSE"]
 
 permissions:
   contents: read
+
+# A newer push to the same branch or pull request makes the running check obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   web:
@@ -34,9 +42,11 @@ jobs:
           node-version: 22
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
+      # Only main saves the cache (~600 MB); pull requests restore it.
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: npm ci
       # tauri::generate_context! needs the built frontend
       - run: npm run build

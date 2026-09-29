@@ -55,9 +55,12 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      # A cache saved by a tag run can only be restored by that same tag, so tag runs don't save
+      # (every release left ~500 MB per job behind). Manual runs on main save for later tags.
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -95,10 +98,12 @@ jobs:
           vpk pack -u checkst -v $env:VERSION -p build/pack -e checkst.exe --packTitle checkst --packAuthors checkst -i src-tauri/icons/icon.ico --releaseNotes build-notes.md -o build/releases
           if ($LASTEXITCODE -ne 0) { throw "vpk pack fehlgeschlagen" }
 
+      # Only a fallback in case the upload below fails; the release itself holds the files.
       - uses: actions/upload-artifact@v4
         with:
           name: checkst-${{ env.VERSION }}
           path: build/releases/*
+          retention-days: 1
 
       # A pushed tag already exists, so no target is passed (GITHUB_TOKEN may not create a release
       # at a commit SHA that is no longer a branch tip). A manual run creates the tag on its branch.
@@ -159,6 +164,7 @@ jobs:
         if: env.HAS_KEY == 'true'
         with:
           workspaces: src-tauri
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - run: npm ci
         if: env.HAS_KEY == 'true'
@@ -193,6 +199,8 @@ jobs:
         with:
           name: checkst-android
           path: build/checkst-android.apk
+          # Only handed over to the publish job, which attaches it to the release.
+          retention-days: 1
 
   publish:
     needs: [version, windows, android]
