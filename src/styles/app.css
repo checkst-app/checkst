@@ -605,6 +605,56 @@ p {
   margin: 4px 0;
 }
 
+/* Context menu of a task: fixed width, so the hint of a hovered chip doesn't resize it. */
+.task-menu {
+  width: 264px;
+}
+
+.menu-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 10px 8px;
+}
+
+.menu-chips-head {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.menu-chips-head .menu-hint {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-chip-row {
+  display: flex;
+  gap: 4px;
+}
+
+.menu-chip {
+  flex: 1;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  color: var(--text-secondary);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.menu-chip.active {
+  background: var(--surface-hover);
+}
+
+.menu-chip.checked {
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
 .token-picker input {
   height: 32px;
   margin-bottom: 4px;

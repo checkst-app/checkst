@@ -97,6 +97,19 @@ const de = {
   "row.undoDelete": "Aufgabe gelöscht",
   "row.undo": "Rückgängig",
 
+  // context menu (right click, long press)
+  "menu.label": "Aktionen für die Aufgabe",
+  "menu.complete": "Abhaken",
+  "menu.reopen": "Wieder öffnen",
+  "menu.due": "Fällig",
+  "menu.duplicate": "Duplizieren",
+  "menu.duplicated": "Dupliziert",
+  "menu.copy": "Zeile kopieren",
+  "menu.copied": "Zeile kopiert",
+  "menu.changed": "Geändert",
+  "menu.keySpace": "Leertaste",
+  "menu.keyDelete": "Entf",
+
   // empty states
   "empty.title": "Nichts zu tun",
   "empty.all": "Tippe oben eine Aufgabe ein und drücke Enter.",
@@ -408,6 +421,7 @@ const de = {
   "sc.toggle": "Erledigt umschalten",
   "sc.edit": "Bearbeiten",
   "sc.delete": "Löschen",
+  "sc.menu": "Aktionen für die Aufgabe (auch Rechtsklick)",
   "sc.priority": "Priorität setzen",
   "sc.settings": "Einstellungen",
   "sc.close": "Dialog schließen",
@@ -612,6 +626,19 @@ const en: Dict = {
   "row.noPriority": "No priority",
   "row.undoDelete": "Task deleted",
   "row.undo": "Undo",
+
+  // context menu (right click, long press)
+  "menu.label": "Task actions",
+  "menu.complete": "Check off",
+  "menu.reopen": "Mark as open",
+  "menu.due": "Due",
+  "menu.duplicate": "Duplicate",
+  "menu.duplicated": "Duplicated",
+  "menu.copy": "Copy line",
+  "menu.copied": "Line copied",
+  "menu.changed": "Changed",
+  "menu.keySpace": "Space",
+  "menu.keyDelete": "Del",
 
   "empty.title": "Nothing to do",
   "empty.all": "Type a task above and press Enter.",
@@ -916,6 +943,7 @@ const en: Dict = {
   "sc.toggle": "Toggle done",
   "sc.edit": "Edit",
   "sc.delete": "Delete",
+  "sc.menu": "Task actions (also right click)",
   "sc.priority": "Set priority",
   "sc.settings": "Settings",
   "sc.close": "Close dialog",

@@ -3,6 +3,7 @@ import {
   addToken,
   bodyParts,
   completeLine,
+  duplicateLine,
   formatLine,
   joinFile,
   lineFromInput,
@@ -12,6 +13,8 @@ import {
   splitFile,
   uncompleteLine,
   withDefaults,
+  withDue,
+  withPriority,
 } from "./todo";
 
 describe("parseLine", () => {
@@ -130,5 +133,28 @@ describe("files", () => {
 
   it("formats lines", () => {
     expect(formatLine({ done: false, priority: "A", creationDate: "2026-09-25", body: "X" })).toBe("(A) 2026-09-25 X");
+  });
+});
+
+describe("quick actions", () => {
+  it("sets, replaces and removes the due date", () => {
+    const t = parseLine("(B) 2026-09-20 Steuer +Finanzen due:2026-09-25", 0)!;
+    expect(withDue(t, "2026-09-30")).toBe("(B) 2026-09-20 Steuer +Finanzen due:2026-09-30");
+    expect(withDue(t, undefined)).toBe("(B) 2026-09-20 Steuer +Finanzen");
+    expect(withDue(parseLine("Anrufen", 0)!, "2026-10-01")).toBe("Anrufen due:2026-10-01");
+  });
+
+  it("sets and removes the priority", () => {
+    expect(withPriority(parseLine("2026-09-20 Steuer due:2026-09-25", 0)!, "A")).toBe("(A) 2026-09-20 Steuer due:2026-09-25");
+    expect(withPriority(parseLine("(A) Steuer", 0)!, undefined)).toBe("Steuer");
+  });
+
+  it("keeps the priority of completed tasks as pri:X", () => {
+    expect(withPriority(parseLine("x 2026-09-29 2026-09-20 Steuer pri:B", 0)!, "A")).toBe("x 2026-09-29 2026-09-20 Steuer pri:A");
+  });
+
+  it("duplicates open tasks as they are and completed ones as open", () => {
+    expect(duplicateLine(parseLine("(A) Steuer +Finanzen", 0)!)).toBe("(A) Steuer +Finanzen");
+    expect(duplicateLine(parseLine("x 2026-09-29 2026-09-20 Steuer pri:A", 0)!)).toBe("(A) 2026-09-20 Steuer");
   });
 });

@@ -3,7 +3,7 @@ import { memo, useRef } from "react";
 import { dueStatus, formatShort } from "../lib/dates";
 import { useT } from "../lib/i18n";
 import { useSettings } from "../lib/settings";
-import { formatLine, setTag, type Task } from "../lib/todo";
+import { type Task, withDue, withPriority } from "../lib/todo";
 import { rescheduleTargets } from "../lib/views";
 import { highlight } from "../lib/suggest";
 import { Checkbox, type MenuItem, MenuList, Popover, PriorityBadge, TaskBody, usePopover } from "./ui";
@@ -19,9 +19,11 @@ interface Props {
   onReplace: (t: Task, raw: string) => void;
   onFilterProject?: (name: string) => void;
   onFilterContext?: (name: string) => void;
+  /** Right click: opens the context menu at the cursor. */
+  onMenu?: (t: Task, at: { x: number; y: number }) => void;
 }
 
-export const TaskRow = memo(function TaskRow({ task, selected, today, onSelect, onToggle, onEdit, onDelete, onReplace, onFilterProject, onFilterContext }: Props) {
+export const TaskRow = memo(function TaskRow({ task, selected, today, onSelect, onToggle, onEdit, onDelete, onReplace, onFilterProject, onFilterContext, onMenu }: Props) {
   const { t, lang } = useT();
   const { settings } = useSettings();
   const due = task.due ? dueStatus(task.due, today) : undefined;
@@ -38,6 +40,11 @@ export const TaskRow = memo(function TaskRow({ task, selected, today, onSelect, 
       className={`task-row ${selected ? "selected" : ""} ${task.done ? "done" : ""} ${task.done && settings.strikeDone ? "strike" : ""}`}
       onClick={() => onSelect(task)}
       onDoubleClick={() => onEdit(task)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onSelect(task);
+        onMenu?.(task, { x: e.clientX, y: e.clientY });
+      }}
       data-line={task.line}
     >
       {selected && <span className="selection-indicator" />}
@@ -80,9 +87,8 @@ function RowActions({ task, today, onEdit, onDelete, onReplace }: Pick<Props, "t
   const prioBtn = useRef<HTMLButtonElement>(null);
   const targets = rescheduleTargets(today, settings.weekStart);
 
-  const fields = { done: task.done, completionDate: task.completionDate, priority: task.priority, creationDate: task.creationDate, body: task.body };
-  const setDue = (iso?: string) => onReplace(task, formatLine({ ...fields, body: setTag(task.body, "due", iso) }));
-  const setPrio = (p?: string) => onReplace(task, formatLine({ ...fields, priority: p }));
+  const setDue = (iso?: string) => onReplace(task, withDue(task, iso));
+  const setPrio = (p?: string) => onReplace(task, withPriority(task, p));
 
   const dueItems: MenuItem[] = [
     { key: "today", label: t("ac.today"), hint: formatShort(targets.today, lang, today), onSelect: () => setDue(targets.today) },

@@ -1017,6 +1017,31 @@ body.mobile textarea {
   box-shadow: inset 0 0 0 1px var(--border);
 }
 
+.m-action.danger,
+.m-action.danger svg {
+  color: var(--danger);
+}
+
+/* Quick actions of a task (long press): which task, due and priority, then the actions. */
+.m-menu-task {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 4px 12px 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.m-menu-quick {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 12px 16px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
 /* ---------- lists and settings ---------- */
 
 .m-content {

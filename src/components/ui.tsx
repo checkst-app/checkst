@@ -241,6 +241,7 @@ export function usePopover() {
 
 export function Popover({
   anchor,
+  at,
   open,
   onClose,
   children,
@@ -249,7 +250,10 @@ export function Popover({
   className = "",
   minWidth,
 }: {
-  anchor: React.RefObject<HTMLElement | null>;
+  /** Opens below this element (above if there is no room) … */
+  anchor?: React.RefObject<HTMLElement | null>;
+  /** … or at this point, e.g. the cursor for a context menu. */
+  at?: { x: number; y: number };
   open: boolean;
   onClose: () => void;
   children: ReactNode;
@@ -261,9 +265,12 @@ export function Popover({
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number; minWidth: number } | null>(null);
 
+  const atX = at?.x;
+  const atY = at?.y;
   useLayoutEffect(() => {
-    if (!open || !anchor.current) return;
-    const r = anchor.current.getBoundingClientRect();
+    if (!open) return;
+    const r = atX !== undefined && atY !== undefined ? new DOMRect(atX, atY, 0, 0) : anchor?.current?.getBoundingClientRect();
+    if (!r) return;
     const width = ref.current?.offsetWidth ?? 220;
     const height = ref.current?.offsetHeight ?? 200;
     let left = align === "right" ? r.right - width : r.left;
@@ -271,12 +278,12 @@ export function Popover({
     let top = r.bottom + offset;
     if (top + height > window.innerHeight - 8) top = Math.max(8, r.top - height - offset);
     setPos({ top, left, minWidth: minWidth ?? r.width });
-  }, [open, anchor, align, offset, minWidth]);
+  }, [open, anchor, atX, atY, align, offset, minWidth]);
 
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (ref.current?.contains(e.target as Node) || anchor.current?.contains(e.target as Node)) return;
+      if (ref.current?.contains(e.target as Node) || anchor?.current?.contains(e.target as Node)) return;
       onClose();
     };
     const onKey = (e: KeyboardEvent) => {

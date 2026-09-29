@@ -237,6 +237,26 @@ export function uncompleteLine(task: Task): string {
   });
 }
 
+function fieldsOf(task: Task): TaskFields {
+  return { done: task.done, completionDate: task.completionDate, priority: task.priority, creationDate: task.creationDate, body: task.body };
+}
+
+/** The task's line with a new due date; undefined removes it. */
+export function withDue(task: Task, iso: string | undefined): string {
+  return formatLine({ ...fieldsOf(task), body: setTag(task.body, "due", iso) });
+}
+
+/** The task's line with a new priority; undefined removes it. Completed tasks keep it as pri:X. */
+export function withPriority(task: Task, priority: string | undefined): string {
+  if (task.done) return formatLine({ ...fieldsOf(task), body: setTag(task.body, "pri", priority) });
+  return formatLine({ ...fieldsOf(task), priority });
+}
+
+/** A copy of the task as a new line; a completed task comes back as an open one. */
+export function duplicateLine(task: Task): string {
+  return task.done ? uncompleteLine(task) : task.raw;
+}
+
 /**
  * Normalizes free input from the quick-add fields into a todo.txt line:
  * a typed "(A)" prefix is kept, and the creation date is inserted after it.

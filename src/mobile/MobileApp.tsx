@@ -7,17 +7,17 @@ import { formatShort, todayIso } from "../lib/dates";
 import { type I18nKey, useT } from "../lib/i18n";
 import type { Settings as SettingsT } from "../lib/settings";
 import { TodoContext, useTodoStore, useTodos } from "../lib/store";
-import { completeLine, type Task, uncompleteLine } from "../lib/todo";
+import type { Task } from "../lib/todo";
 import { groupTasks, noFilters, selectTasks, type View, viewDefaults } from "../lib/views";
 import { useBack } from "./back";
-import { AppBar, IconButton, SnackProvider, useSnack, useSystemBars } from "./common";
+import { AppBar, IconButton, SnackProvider, useSystemBars } from "./common";
 import { EditSheet } from "./EditSheet";
-import { useFeedback } from "./feedback";
 import { ListsScreen } from "./ListsScreen";
 import { QuickAdd } from "./QuickAdd";
 import { type MobileUpdate, SettingsScreen, updatePending } from "./SettingsScreen";
 import { SetupScreen } from "./SetupScreen";
 import { CollapsedGroup, Group, TaskRow } from "./TaskList";
+import { TaskSheet, useToggleTask } from "./TaskSheet";
 import { isNewer, latestRelease } from "./updates";
 import "./mobile.css";
 
@@ -41,7 +41,7 @@ function MobileMain({ settings }: { settings: SettingsT }) {
   const [tab, setTab] = useState<Tab>("today");
   const [pushed, setPushed] = useState<View | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [editing, setEditing] = useState<Task | null>(null);
+  const [sheet, setSheet] = useState<{ kind: "edit" | "menu"; task: Task } | null>(null);
   const [search, setSearch] = useState<string | null>(null);
   const [typing, setTyping] = useState(false);
   const [version, setVersion] = useState("");
@@ -50,7 +50,8 @@ function MobileMain({ settings }: { settings: SettingsT }) {
   useBack(!!pushed, () => setPushed(null));
   useBack(showSettings, () => setShowSettings(false));
   useBack(search !== null, () => setSearch(null));
-  useBack(!!editing, () => setEditing(null));
+  // One entry for both sheets: going from the quick actions to editing keeps the back button right.
+  useBack(!!sheet, () => setSheet(null));
 
   const storeRef = useRef(store);
   storeRef.current = store;
@@ -135,7 +136,7 @@ function MobileMain({ settings }: { settings: SettingsT }) {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [openInstaller]);
 
-  useSystemBars("--surface", !!editing, !showSettings);
+  useSystemBars("--surface", !!sheet, !showSettings);
 
   // The snackbar floats just above quick add and navigation.
   const bottom = useRef<HTMLDivElement>(null);
@@ -175,7 +176,8 @@ function MobileMain({ settings }: { settings: SettingsT }) {
                 onOpenSearch={openSearch}
                 onBack={pushed ? () => setPushed(null) : undefined}
                 onSettings={() => setShowSettings(true)}
-                onEdit={setEditing}
+                onEdit={(task) => setSheet({ kind: "edit", task })}
+                onMenu={(task) => setSheet({ kind: "menu", task })}
                 updateDot={updatePending(update)}
               />
             ) : (
@@ -209,7 +211,8 @@ function MobileMain({ settings }: { settings: SettingsT }) {
             </div>
           </>
         )}
-        {editing && <EditSheet task={editing} onClose={() => setEditing(null)} />}
+        {sheet?.kind === "edit" && <EditSheet task={sheet.task} onClose={() => setSheet(null)} />}
+        {sheet?.kind === "menu" && <TaskSheet task={sheet.task} onClose={() => setSheet(null)} onEdit={() => setSheet({ kind: "edit", task: sheet.task })} />}
       </div>
     </TodoContext.Provider>
   );
@@ -264,6 +267,7 @@ function ListScreen({
   onBack,
   onSettings,
   onEdit,
+  onMenu,
   updateDot,
 }: {
   view: View;
@@ -273,12 +277,11 @@ function ListScreen({
   onBack?: () => void;
   onSettings: () => void;
   onEdit: (task: Task) => void;
+  onMenu: (task: Task) => void;
   updateDot?: boolean;
 }) {
   const { t, lang } = useT();
   const store = useTodos();
-  const snack = useSnack();
-  const feedback = useFeedback();
   const today = todayIso();
   const query = search ?? "";
   const sel = useMemo(() => selectTasks(store.tasks, store.archived, view, query, noFilters, today), [store.tasks, store.archived, view, query, today]);
@@ -304,16 +307,7 @@ function ListScreen({
     return sel.done;
   }, [view.kind, store.tasks, store.archived, sel.done, today, query]);
 
-  const toggle = async (task: Task) => {
-    const next = task.done ? uncompleteLine(task) : completeLine(task, today);
-    if (task.done) feedback("tick");
-    else feedback("confirm", "complete");
-    await store.toggleDone(task).catch(() => {});
-    snack(task.done ? t("m.reopened") : t("m.completed"), {
-      label: t("m.undo"),
-      run: () => void store.replaceLine({ ...task, raw: next }, task.raw).catch(() => {}),
-    });
-  };
+  const toggle = useToggleTask();
 
   const open = sel.open.length;
   const overdue = sel.open.filter((x) => x.due && x.due < today).length;
@@ -364,7 +358,7 @@ function ListScreen({
         {groups.map((g) => (
           <Group key={g.key} title={g.title ?? t(g.titleKey, g.titleVars)} count={g.tasks.length} tone={g.tone === "danger" ? "danger" : undefined}>
             {g.tasks.map((task) => (
-              <TaskRow key={`${task.line}:${task.raw}`} task={task} today={today} onToggle={toggle} onOpen={onEdit} />
+              <TaskRow key={`${task.line}:${task.raw}`} task={task} today={today} onToggle={toggle} onOpen={onEdit} onMenu={onMenu} />
             ))}
           </Group>
         ))}
@@ -373,14 +367,14 @@ function ListScreen({
             {done.length > 0 && (
               <Group title={t("grp.notArchived")} count={done.length}>
                 {done.map((task) => (
-                  <TaskRow key={`${task.line}:${task.raw}`} task={task} today={today} onToggle={toggle} onOpen={onEdit} />
+                  <TaskRow key={`${task.line}:${task.raw}`} task={task} today={today} onToggle={toggle} onOpen={onEdit} onMenu={onMenu} />
                 ))}
               </Group>
             )}
             {sel.archived.length > 0 && (
               <Group title={t("grp.archived")} count={sel.archived.length}>
                 {sel.archived.map((task) => (
-                  <TaskRow key={`${task.line}:${task.raw}`} task={task} today={today} onToggle={toggle} onOpen={onEdit} readOnly />
+                  <TaskRow key={`${task.line}:${task.raw}`} task={task} today={today} onToggle={toggle} onOpen={onEdit} onMenu={onMenu} readOnly />
                 ))}
               </Group>
             )}
@@ -389,7 +383,7 @@ function ListScreen({
           done.length > 0 && (
             <CollapsedGroup title={view.kind === "today" ? t("m.doneToday") : t("nav.done")} count={done.length}>
               {done.map((task) => (
-                <TaskRow key={`${task.line}:${task.raw}`} task={task} today={today} onToggle={toggle} onOpen={onEdit} readOnly={task.line < 0} />
+                <TaskRow key={`${task.line}:${task.raw}`} task={task} today={today} onToggle={toggle} onOpen={onEdit} onMenu={onMenu} readOnly={task.line < 0} />
               ))}
             </CollapsedGroup>
           )

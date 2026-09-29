@@ -652,7 +652,7 @@ function ShortcutKeys({ accel }: { accel: string }) {
   return (
     <span className="shortcut-keys">
       {accel.split("+").map((k) => (
-        <Keycap key={k}>{lang === "de" && k === "Ctrl" ? "Strg" : k}</Keycap>
+        <Keycap key={k}>{lang === "de" && k === "Ctrl" ? "Strg" : lang === "de" && k === "Shift" ? "Umschalt" : k}</Keycap>
       ))}
     </span>
   );
@@ -670,6 +670,7 @@ function ShortcutsPage() {
     [t("sc.toggle"), "Space"],
     [t("sc.edit"), "Enter"],
     [t("sc.delete"), "Entf"],
+    [t("sc.menu"), "Shift+F10"],
     [t("sc.settings"), "Ctrl+,"],
     [t("sc.close"), "Esc"],
   ];

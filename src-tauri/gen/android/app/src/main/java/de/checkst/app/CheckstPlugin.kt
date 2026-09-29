@@ -69,7 +69,7 @@ class InstallArgs {
 
 @InvokeArg
 class FeedbackArgs {
-  /** "confirm", "tick" or "threshold" */
+  /** "confirm", "tick", "threshold" or "longpress" */
   var haptic: String? = null
   /** "complete" */
   var sound: String? = null
@@ -343,6 +343,7 @@ class CheckstPlugin(private val activity: Activity) : Plugin(activity) {
       val haptic = when (args.haptic) {
         "confirm" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
         "tick" -> HapticFeedbackConstants.KEYBOARD_TAP
+        "longpress" -> HapticFeedbackConstants.LONG_PRESS
         "threshold" ->
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) HapticFeedbackConstants.GESTURE_THRESHOLD_ACTIVATE
           else HapticFeedbackConstants.CONTEXT_CLICK

@@ -1,5 +1,5 @@
 import { Calendar, Check, ChevronDown, ChevronRight, RotateCcw } from "lucide-react";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { ContextChip, PriorityBadge, ProjectChip } from "../components/ui";
 import { dueStatus, formatShort, type Lang } from "../lib/dates";
 import { type TFunc, useT } from "../lib/i18n";
@@ -37,18 +37,23 @@ export function dueLabel(due: string, today: string, lang: Lang, t: TFunc): { te
 }
 
 const SWIPE_DONE = 96;
+/** Holding a task this long (ms) without moving opens its quick actions. */
+const LONG_PRESS = 450;
 
 export function TaskRow({
   task,
   today,
   onToggle,
   onOpen,
+  onMenu,
   readOnly,
 }: {
   task: Task;
   today: string;
   onToggle: (task: Task) => void;
   onOpen: (task: Task) => void;
+  /** Long press: quick actions. Also for read-only (archived) tasks. */
+  onMenu?: (task: Task) => void;
   readOnly?: boolean;
 }) {
   const { t, lang } = useT();
@@ -59,16 +64,38 @@ export function TaskRow({
   const drag = useRef<{ x: number; y: number; id: number; active: boolean; cancelled: boolean } | null>(null);
   const moved = useRef(false);
   const armed = useRef(false);
+  const press = useRef<{ timer: number; x: number; y: number } | null>(null);
   const feedback = useFeedback();
 
+  const stopPress = () => {
+    if (press.current) window.clearTimeout(press.current.timer);
+    press.current = null;
+  };
+  useEffect(() => stopPress, []);
+
   // Swipe right to check off (or reopen); vertical movement keeps scrolling the list.
+  // Holding still opens the quick actions instead.
   const onPointerDown = (e: React.PointerEvent) => {
-    if (readOnly || leaving) return;
-    drag.current = { x: e.clientX, y: e.clientY, id: e.pointerId, active: false, cancelled: false };
+    if (leaving) return;
     moved.current = false;
+    stopPress();
+    if (onMenu) {
+      const timer = window.setTimeout(() => {
+        press.current = null;
+        drag.current = null;
+        moved.current = true; // lifting the finger must not open the task as well
+        feedback("longpress");
+        onMenu(task);
+      }, LONG_PRESS);
+      press.current = { timer, x: e.clientX, y: e.clientY };
+    }
+    if (readOnly) return;
+    drag.current = { x: e.clientX, y: e.clientY, id: e.pointerId, active: false, cancelled: false };
     armed.current = false;
   };
   const onPointerMove = (e: React.PointerEvent) => {
+    const p = press.current;
+    if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 10) stopPress();
     const d = drag.current;
     if (!d || d.cancelled) return;
     const mx = e.clientX - d.x;
@@ -92,6 +119,7 @@ export function TaskRow({
     setDx(next);
   };
   const onPointerUp = () => {
+    stopPress();
     const d = drag.current;
     drag.current = null;
     if (!d?.active) return;
@@ -110,9 +138,11 @@ export function TaskRow({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={() => {
+        stopPress();
         drag.current = null;
         setDx(0);
       }}
+      onContextMenu={(e) => e.preventDefault()}
       onClick={() => {
         if (moved.current) return;
         if (!readOnly) onOpen(task);
@@ -127,7 +157,7 @@ export function TaskRow({
         disabled={readOnly}
         onClick={(e) => {
           e.stopPropagation();
-          onToggle(task);
+          if (!moved.current) onToggle(task);
         }}
       >
         {task.done && <Check size={14} strokeWidth={3} />}

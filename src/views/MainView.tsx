@@ -17,14 +17,16 @@ import { listen } from "@tauri-apps/api/event";
 import type { UpdateState } from "../App";
 import { Sidebar } from "../components/Sidebar";
 import { SyntaxInput, type SyntaxInputHandle } from "../components/SyntaxInput";
+import { TaskMenu } from "../components/TaskMenu";
 import { TaskRow } from "../components/TaskRow";
 import { Button, Keycap, type MenuItem, MenuButton } from "../components/ui";
 import { type FocusRequest, fileName } from "../lib/backend";
+import { copyText } from "../lib/clipboard";
 import { todayIso } from "../lib/dates";
 import { useT } from "../lib/i18n";
 import { type GroupBy, type SortBy, useSettings } from "../lib/settings";
 import { useTodos } from "../lib/store";
-import { type Task, withDefaults } from "../lib/todo";
+import { duplicateLine, type Task, withDefaults } from "../lib/todo";
 import { countTasks, type Filters, groupTasks, noFilters, selectTasks, type View, viewDefaults } from "../lib/views";
 import { SettingsView, type SettingsTab } from "./SettingsView";
 import { TaskDialog } from "./TaskDialog";
@@ -184,7 +186,8 @@ function TasksPane({
   const [selected, setSelected] = useState<{ line: number; raw: string } | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ done: true });
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [toast, setToast] = useState<{ text: string; undo: () => void } | null>(null);
+  const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
+  const [menu, setMenu] = useState<{ task: Task; x: number; y: number } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const quickRef = useRef<SyntaxInputHandle>(null);
 
@@ -217,7 +220,7 @@ function TasksPane({
     listRef.current?.querySelector(`[data-line="${selectedTask.line}"]`)?.scrollIntoView({ block: "nearest" });
   }, [selectedTask]);
 
-  const showToast = useCallback((text: string, undo: () => void) => {
+  const showToast = useCallback((text: string, undo?: () => void) => {
     setToast({ text, undo });
   }, []);
   useEffect(() => {
@@ -241,7 +244,7 @@ function TasksPane({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest("input, textarea, .popover, .dialog")) return;
+      if (menu || target.closest("input, textarea, .popover, .dialog")) return;
       if (e.ctrlKey || e.altKey || e.metaKey) return;
       const idx = selectedTask ? visible.indexOf(selectedTask) : -1;
       const pick = (i: number) => {
@@ -260,6 +263,10 @@ function TasksPane({
           quickRef.current?.focus();
         }
         return;
+      } else if (e.key === "ContextMenu" || (e.shiftKey && e.key === "F10")) {
+        e.preventDefault();
+        const r = listRef.current?.querySelector(`[data-line="${selectedTask.line}"]`)?.getBoundingClientRect();
+        if (r) setMenu({ task: selectedTask, x: r.left + 32, y: r.bottom });
       } else if (e.key === " ") {
         e.preventDefault();
         if (selectedTask.line >= 0) store.toggleDone(selectedTask);
@@ -279,7 +286,7 @@ function TasksPane({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [visible, selectedTask, store, onEdit, onDelete]);
+  }, [menu, visible, selectedTask, store, onEdit, onDelete]);
 
   const title =
     view.kind === "project"
@@ -333,6 +340,17 @@ function TasksPane({
 
   const selectTask = useCallback((task: Task) => setSelected({ line: task.line, raw: task.raw }), []);
   const replace = useCallback((task: Task, raw: string) => store.replaceLine(task, raw), [store]);
+  const openMenu = useCallback((task: Task, at: { x: number; y: number }) => setMenu({ task, ...at }), []);
+  const closeMenu = useCallback(() => setMenu(null), []);
+  const duplicate = useCallback(
+    async (task: Task) => {
+      const raw = duplicateLine(task);
+      const line = await store.addLine(raw);
+      setSelected({ line, raw });
+    },
+    [store],
+  );
+  const copy = useCallback((task: Task) => void copyText(task.raw).then(() => showToast(t("menu.copied")), () => {}), [showToast, t]);
   const rowProps = {
     today,
     onSelect: selectTask,
@@ -342,6 +360,7 @@ function TasksPane({
     onReplace: replace,
     onFilterProject: (name: string) => setView({ kind: "project", name }),
     onFilterContext: (name: string) => setView({ kind: "context", name }),
+    onMenu: openMenu,
   };
 
   const isEmpty = groups.length === 0 && sel.done.length === 0 && sel.archived.length === 0;
@@ -488,12 +507,29 @@ function TasksPane({
         )}
       </div>
 
+      {menu && (
+        <TaskMenu
+          task={menu.task}
+          at={menu}
+          today={today}
+          onClose={closeMenu}
+          onToggle={store.toggleDone}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onReplace={replace}
+          onDuplicate={duplicate}
+          onCopy={copy}
+        />
+      )}
+
       {toast && (
         <div className="toast">
           <span>{toast.text}</span>
-          <button type="button" onClick={toast.undo}>
-            {t("row.undo")}
-          </button>
+          {toast.undo && (
+            <button type="button" onClick={toast.undo}>
+              {t("row.undo")}
+            </button>
+          )}
         </div>
       )}
 
