@@ -149,6 +149,8 @@ async function main() {
     "monitor", "sun", "moon", "download", "cloud", "box", "git-branch", "refresh-cw", "file-text", "calendar",
     "folder", "hash", "archive", "history", "power", "eye", "lock", "bug", "book-marked", "scale", "tag", "copy",
     "package", "folder-archive", "terminal", "minus", "plus", "languages", "smartphone", "x", "check",
+    "sunrise", "calendar-chevrons-right", "calendar-plus", "calendar-off", "flag-off", "pencil", "copy-plus", "trash-2",
+    "mouse-pointer-2",
   ];
   await preloadIcons(icons);
   await fonts();

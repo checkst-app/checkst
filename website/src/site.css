@@ -25,6 +25,9 @@
   --prio-a: #c9440e;
   --prio-a-soft: #fbeae2;
   --prio-b: #a87400;
+  --prio-b-soft: #faf1dc;
+  --prio-c: #3d6fb8;
+  --prio-c-soft: #e6eef9;
   --danger: #c4314b;
   --shot-shadow: 0 24px 60px #1a1a1926;
   --glow: 0 6px 18px #1d765740;
@@ -54,6 +57,9 @@
   --prio-a: #f28a5b;
   --prio-a-soft: #3f2419;
   --prio-b: #e6b84c;
+  --prio-b-soft: #3a301a;
+  --prio-c: #86a9e3;
+  --prio-c-soft: #1f2a3d;
   --danger: #f17a86;
   --shot-shadow: 0 24px 60px #00000080;
   --glow: 0 6px 18px #4dc39330;
@@ -585,6 +591,21 @@ h2 {
   color: var(--prio-a);
 }
 
+.prio-b {
+  background: var(--prio-b-soft);
+  color: var(--prio-b);
+}
+
+.prio-c {
+  background: var(--prio-c-soft);
+  color: var(--prio-c);
+}
+
+.prio-d {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+}
+
 .task-title {
   font-size: 15px;
   font-weight: 500;
@@ -1000,6 +1021,172 @@ h2 {
 .nd-add {
   border-top: 1px solid var(--border);
   color: var(--text-tertiary);
+}
+
+/* context menu: a few task rows, the quick actions opened on the first one, as in the app */
+.menu-demo {
+  position: relative;
+  min-height: 390px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+
+.md-list {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  right: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: 13px;
+  text-align: left;
+}
+
+.md-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.md-row.selected {
+  background: var(--accent-soft);
+}
+
+.md-row .chip {
+  font-size: 12px;
+}
+
+.md-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.md-due {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.md-menu {
+  position: absolute;
+  top: 58px;
+  left: 30%;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border), 0 18px 40px #1a1a1929, 0 2px 6px #1a1a1914;
+  font-size: 13px;
+  text-align: left;
+}
+
+/* The pointer tip sits on the corner where the menu opened. */
+.md-cursor {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  display: inline-flex;
+}
+
+.md-cursor svg {
+  fill: #ffffff;
+  stroke: #1a1a19;
+}
+
+.md-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.md-item svg {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.md-item small {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.md-item.danger,
+.md-item.danger svg {
+  color: var(--danger);
+}
+
+.md-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border);
+}
+
+.md-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 10px 8px;
+}
+
+.md-chips-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.md-chips-head small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.md-chip-row {
+  display: flex;
+  gap: 4px;
+}
+
+.md-chip {
+  flex: 1;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  color: var(--text-secondary);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.md-chip.active {
+  background: var(--surface-hover);
+}
+
+.md-chip.checked {
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
 }
 
 /* small feature cards */
@@ -1757,6 +1944,11 @@ h2 {
     gap: 28px;
   }
 
+  /* Stacked, the text comes first as in the other cards. */
+  .card-menu .card-text {
+    order: -1;
+  }
+
   .download-options {
     grid-auto-flow: row;
   }
@@ -1940,6 +2132,16 @@ h2 {
 
   .nd-due {
     white-space: nowrap;
+  }
+
+  .md-list {
+    left: 12px;
+    right: 12px;
+  }
+
+  .md-menu {
+    left: 24px;
+    width: min(250px, calc(100% - 36px));
   }
 
   .editor-lines {

@@ -32,6 +32,8 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
   const features = t.features;
   const bar = features.bar;
   const note = features.note;
+  const menu = features.menu;
+  const menuItem = (ic, label, hint, cls = "") => `<div class="md-item ${cls}">${icon(ic, 15)}<span>${esc(label)}</span>${hint ? `<small>${esc(hint)}</small>` : ""}</div>`;
   const legalLinks = [
     cfg.legal.impressumUrl && `<a href="${esc(cfg.legal.impressumUrl)}">${esc(t.footer.impressum)}</a>`,
     cfg.legal.privacyUrl && `<a href="${esc(cfg.legal.privacyUrl)}">${esc(t.footer.privacy)}</a>`,
@@ -169,6 +171,43 @@ export function renderPage({ t, lang, data, cfg, icon, prefix, canonical, altern
           </div>
           <div class="nd-add">${icon("plus", 15)}<span>${esc(note.add)}</span></div>
         </div>
+      </div>
+    </article>
+  </div>
+
+  <div class="grid-row row-note">
+    <article class="card card-note card-menu" data-reveal>
+      <div class="menu-demo" aria-hidden="true">
+        <div class="md-list">
+          ${menu.rows
+            .map(
+              (r, i) =>
+                `<div class="md-row ${i === 0 ? "selected" : ""}"><span class="checkbox"></span>${r.prio ? `<span class="prio prio-a">${r.prio}</span>` : ""}<span class="md-text">${esc(r.text)}</span>${chip(r.chip[0], r.chip[1])}${r.due ? `<span class="md-due">${icon("calendar", 13)}${esc(r.due)}</span>` : ""}</div>`,
+            )
+            .join("\n          ")}
+        </div>
+        <div class="md-menu">
+          <span class="md-cursor">${icon("mouse-pointer-2", 20)}</span>
+          ${menuItem("check", menu.complete, menu.space)}
+          ${menuItem("pencil", menu.edit, "Enter")}
+          <span class="md-divider"></span>
+          <div class="md-chips">
+            <div class="md-chips-head"><span>${esc(menu.due)}</span><small>${esc(menu.dueHint)}</small></div>
+            <div class="md-chip-row">${["sun", "sunrise", "calendar-chevrons-right", "calendar-plus", "calendar-off"].map((ic, i) => `<span class="md-chip ${i === 1 ? "checked" : i === 2 ? "active" : ""}">${icon(ic, 15)}</span>`).join("")}</div>
+          </div>
+          <div class="md-chips">
+            <div class="md-chips-head"><span>${esc(menu.priority)}</span><small>${esc(menu.prioHint)}</small></div>
+            <div class="md-chip-row">${["A", "B", "C", "D"].map((p) => `<span class="md-chip ${p === "A" ? "checked" : ""}"><span class="prio prio-${p.toLowerCase()}">${p}</span></span>`).join("")}<span class="md-chip">${icon("flag-off", 15)}</span></div>
+          </div>
+          <span class="md-divider"></span>
+          ${menuItem("copy-plus", menu.duplicate)}
+          ${menuItem("trash-2", menu.delete, menu.del, "danger")}
+        </div>
+      </div>
+      <div class="card-text">
+        <h3>${esc(features.menuTitle)}</h3>
+        <p>${esc(features.menuText)}</p>
+        <ul class="note-points">${features.menuPoints.map((p) => `<li>${icon("check", 16)}${esc(p)}</li>`).join("")}</ul>
       </div>
     </article>
   </div>
