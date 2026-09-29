@@ -219,21 +219,60 @@ pub fn set_tray_labels(app: AppHandle, open: String, new_task: String, pin: Stri
 }
 
 /// Replaces the taskbar (window) and tray icon, e.g. to follow the accent color.
-/// Both come in as PNG and are kept for the next start.
+/// Window and tray icon come in as PNG and are kept for the next start, `ico` goes into the
+/// app's shortcuts.
 #[tauri::command]
-pub fn set_app_icon(app: AppHandle, window_png: Vec<u8>, tray_png: Vec<u8>) -> Result<(), String> {
+pub fn set_app_icon(app: AppHandle, window_png: Vec<u8>, tray_png: Vec<u8>, ico: Vec<u8>) -> Result<(), String> {
     let window_icon = Image::from_bytes(&window_png).map_err(|e| e.to_string())?;
     let tray_icon = Image::from_bytes(&tray_png).map_err(|e| e.to_string())?;
     if let Ok(dir) = app.path().app_cache_dir() {
         let _ = std::fs::create_dir_all(&dir);
         let _ = std::fs::write(dir.join(WINDOW_ICON_FILE), &window_png);
         let _ = std::fs::write(dir.join(TRAY_ICON_FILE), &tray_png);
+        #[cfg(windows)]
+        set_shortcut_icons(&app, &dir, &ico);
     }
+    #[cfg(not(windows))]
+    let _ = ico;
     set_window_icon(&app, window_icon)?;
     if let Some(tray) = app.tray_by_id(TRAY_ID) {
         tray.set_icon(Some(tray_icon)).map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+/// The installed app's taskbar button shows the icon of its Start menu shortcut (see
+/// winicon.rs), so the shortcuts get the accent icon too. The file name follows the content
+/// because Explorer caches icons by path.
+#[cfg(windows)]
+fn set_shortcut_icons(app: &AppHandle, dir: &std::path::Path, ico: &[u8]) {
+    use std::path::PathBuf;
+    static LATEST: Mutex<Option<PathBuf>> = Mutex::new(None);
+    static RUNNING: Mutex<()> = Mutex::new(());
+
+    let Some(app_id) = crate::winicon::process_app_id() else { return };
+    let hash = ico.iter().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| (h ^ *b as u64).wrapping_mul(0x0100_0000_01b3));
+    let icon = dir.join(format!("app-icon-{hash:016x}.ico"));
+    if std::fs::write(&icon, ico).is_err() && !icon.exists() {
+        return;
+    }
+    let mut dirs = Vec::new();
+    if let Ok(roaming) = app.path().data_dir() {
+        dirs.push(roaming.join(r"Microsoft\Windows\Start Menu\Programs"));
+        dirs.push(roaming.join(r"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"));
+    }
+    if let Ok(desktop) = app.path().desktop_dir() {
+        dirs.push(desktop);
+    }
+    *LATEST.lock().unwrap() = Some(icon);
+    // Off the main thread. Quick accent changes may overlap; every run applies the newest icon.
+    std::thread::spawn(move || {
+        let _running = RUNNING.lock();
+        let Some(icon) = LATEST.lock().unwrap().clone() else { return };
+        if crate::winicon::set_shortcut_icons(&dirs, &app_id, &icon) > 0 {
+            crate::winicon::refresh_shell_icons();
+        }
+    });
 }
 
 /// The icon the UI sent last time. Right after a Windows restart the notification area may

@@ -58,7 +58,7 @@ export const backend = {
   setQuickShortcut: (accelerator: string) => invoke<void>("set_quick_shortcut", { accelerator }),
   setTrayLabels: (open: string, newTask: string, pin: string, pinned: boolean, quit: string) =>
     invoke<void>("set_tray_labels", { open, newTask, pin, pinned, quit }),
-  setAppIcon: (windowPng: number[], trayPng: number[]) => invoke<void>("set_app_icon", { windowPng, trayPng }),
+  setAppIcon: (windowPng: number[], trayPng: number[], ico: number[]) => invoke<void>("set_app_icon", { windowPng, trayPng, ico }),
   quitApp: () => invoke<void>("quit_app"),
   startedMinimized: () => invoke<boolean>("started_minimized"),
   checkUpdate: () => invoke<UpdateStatus>("check_update"),

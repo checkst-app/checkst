@@ -47,8 +47,33 @@ export function renderAppIcon(accent: AccentName, size: number): Uint8Array {
   return Uint8Array.from(atob(url.slice(url.indexOf(",") + 1)), (c) => c.charCodeAt(0));
 }
 
+/** Packs square PNGs into an .ico file (Windows reads PNG entries since Vista). */
+export function packIco(images: { size: number; png: Uint8Array }[]): Uint8Array {
+  const header = 6 + 16 * images.length;
+  const out = new Uint8Array(header + images.reduce((n, i) => n + i.png.length, 0));
+  const view = new DataView(out.buffer);
+  view.setUint16(2, 1, true);
+  view.setUint16(4, images.length, true);
+  let offset = header;
+  images.forEach(({ size, png }, i) => {
+    const entry = 6 + 16 * i;
+    view.setUint8(entry, size % 256); // 0 means 256
+    view.setUint8(entry + 1, size % 256);
+    view.setUint16(entry + 4, 1, true);
+    view.setUint16(entry + 6, 32, true);
+    view.setUint32(entry + 8, png.length, true);
+    view.setUint32(entry + 12, offset, true);
+    out.set(png, offset);
+    offset += png.length;
+  });
+  return out;
+}
+
+const ICO_SIZES = [16, 20, 24, 32, 40, 48, 64, 256];
+
 export async function applyAppIcon(accent: AccentName) {
   const windowSize = 128;
   const traySize = 32;
-  await backend.setAppIcon(Array.from(renderAppIcon(accent, windowSize)), Array.from(renderAppIcon(accent, traySize)));
+  const ico = packIco(ICO_SIZES.map((size) => ({ size, png: renderAppIcon(accent, size) })));
+  await backend.setAppIcon(Array.from(renderAppIcon(accent, windowSize)), Array.from(renderAppIcon(accent, traySize)), Array.from(ico));
 }
