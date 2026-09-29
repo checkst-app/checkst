@@ -843,43 +843,62 @@ p {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent);
-  flex-shrink: 0;
-}
-
-.status-saving .dot {
-  background: var(--text-tertiary);
-}
-
-.status-error .dot,
-.status-missing .dot {
   background: var(--danger);
+  flex-shrink: 0;
 }
 
 .status-error {
   color: var(--danger);
 }
 
-.update-pill {
+.update-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 12px 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.update-card-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 12px;
+  max-width: 100%;
+  font-size: 13px;
 }
 
-.update-pill span {
-  flex: 1;
+.update-card-title svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.update-card-title b {
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.update-pill b {
+.update-card p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.update-card button {
+  margin-top: 4px;
+  font-size: 12px;
   font-weight: 600;
+  color: var(--accent);
+}
+
+.update-card button:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
 }
 
 /* ---------- task list ---------- */

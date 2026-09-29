@@ -126,12 +126,10 @@ export function MainView({ update, onCheckUpdate }: { update: UpdateState; onChe
           setPage("tasks");
         }}
         onNewTask={() => setDialog({ mode: "create" })}
-        onSettings={() => {
-          if (update.phase === "available") setSettingsTab("about");
-          setPage("settings");
-        }}
+        onSettings={() => setPage("settings")}
         settingsActive={page === "settings"}
         update={update}
+        onDownloadUpdate={onCheckUpdate}
       />
       <div className="content">
         {page === "tasks" ? (

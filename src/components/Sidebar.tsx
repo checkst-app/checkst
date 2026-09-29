@@ -1,14 +1,13 @@
 import {
   AtSign,
   CalendarDays,
+  CircleArrowDown,
   CircleCheck,
-  Download,
   Flag,
   Folder,
   Inbox,
   type LucideIcon,
   Plus,
-  RefreshCw,
   Search,
   Settings as SettingsIcon,
   Sun,
@@ -57,10 +56,36 @@ interface Props {
   onSettings: () => void;
   settingsActive: boolean;
   update: UpdateState;
+  onDownloadUpdate: () => void;
+}
+
+function UpdateCard({ update, onDownload }: { update: UpdateState; onDownload: () => void }) {
+  const { t } = useT();
+  if (update.phase !== "available" && update.phase !== "downloading" && update.phase !== "ready") return null;
+  const ready = update.phase === "ready";
+  return (
+    <div className="update-card">
+      <div className="update-card-title">
+        <CircleArrowDown size={16} />
+        <b>{t(ready ? "update.ready" : "update.available", { version: update.version })}</b>
+      </div>
+      <p>{t(ready ? "update.readyDesc" : update.phase === "downloading" ? "set.downloading" : "update.availableDesc")}</p>
+      {ready && (
+        <button type="button" onClick={() => backend.applyUpdate()}>
+          {t("set.restartNow")}
+        </button>
+      )}
+      {update.phase === "available" && (
+        <button type="button" onClick={onDownload}>
+          {t("set.download")}
+        </button>
+      )}
+    </div>
+  );
 }
 
 export const Sidebar = forwardRef<HTMLInputElement, Props>(function Sidebar(
-  { view, onView, counts, search, onSearch, onNewTask, onSettings, settingsActive, update },
+  { view, onView, counts, search, onSearch, onNewTask, onSettings, settingsActive, update, onDownloadUpdate },
   searchRef,
 ) {
   const { t } = useT();
@@ -69,15 +94,6 @@ export const Sidebar = forwardRef<HTMLInputElement, Props>(function Sidebar(
   const [hint, setHint] = useState<"project" | "context" | null>(null);
   const file = fileName(settings.todoPath || "todo.txt");
   const is = (v: View) => !settingsActive && sameView(view, v);
-
-  const statusText =
-    status === "saving"
-      ? t("status.saving")
-      : status === "error"
-        ? t("status.error")
-        : status === "missing"
-          ? t("status.missing", { file })
-          : t("status.saved", { file });
 
   return (
     <aside className="sidebar">
@@ -157,23 +173,14 @@ export const Sidebar = forwardRef<HTMLInputElement, Props>(function Sidebar(
       </div>
 
       <div className="sidebar-bottom">
-        {update.phase === "ready" && (
-          <button type="button" className="update-pill" onClick={() => backend.applyUpdate()}>
-            <RefreshCw size={14} />
-            <span>{t("update.ready", { version: update.version })}</span>
-            <b>{t("update.restart")}</b>
-          </button>
+        <UpdateCard update={update} onDownload={onDownloadUpdate} />
+        {/* Saving is silent; only problems with the file show up here. */}
+        {(status === "error" || status === "missing") && (
+          <div className={`file-status status-${status}`} title={settings.todoPath}>
+            <span className="dot" />
+            <span>{status === "error" ? t("status.error") : t("status.missing", { file })}</span>
+          </div>
         )}
-        {update.phase === "available" && (
-          <button type="button" className="update-pill" onClick={onSettings}>
-            <Download size={14} />
-            <span>{t("update.available", { version: update.version })}</span>
-          </button>
-        )}
-        <div className={`file-status status-${status}`} title={settings.todoPath}>
-          <span className="dot" />
-          <span>{statusText}</span>
-        </div>
         <NavItem icon={SettingsIcon} label={t("nav.settings")} active={settingsActive} onClick={onSettings} />
       </div>
     </aside>
