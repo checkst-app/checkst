@@ -16,7 +16,7 @@ function palette(accent: AccentName) {
   return { top: css(mix(base, WHITE, 0.08)), bottom: css(mix(base, BLACK, 0.12)), check: css(mix(base, WHITE, 0.72)) };
 }
 
-/** Renders the "Offenes c" app icon (same geometry as src-tauri/icons/app-icon.svg) as RGBA pixels. */
+/** Renders the "Offenes c" app icon (same geometry as src-tauri/icons/app-icon.svg) as PNG. */
 export function renderAppIcon(accent: AccentName, size: number): Uint8Array {
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -43,16 +43,12 @@ export function renderAppIcon(accent: AccentName, size: number): Uint8Array {
   ctx.strokeStyle = check;
   ctx.stroke(new Path2D("M32 50 l16 16 42 -40"));
 
-  return new Uint8Array(ctx.getImageData(0, 0, size, size).data.buffer);
+  const url = canvas.toDataURL("image/png");
+  return Uint8Array.from(atob(url.slice(url.indexOf(",") + 1)), (c) => c.charCodeAt(0));
 }
 
 export async function applyAppIcon(accent: AccentName) {
   const windowSize = 128;
   const traySize = 32;
-  await backend.setAppIcon(
-    Array.from(renderAppIcon(accent, windowSize)),
-    windowSize,
-    Array.from(renderAppIcon(accent, traySize)),
-    traySize,
-  );
+  await backend.setAppIcon(Array.from(renderAppIcon(accent, windowSize)), Array.from(renderAppIcon(accent, traySize)));
 }

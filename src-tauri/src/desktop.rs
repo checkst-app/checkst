@@ -2,6 +2,7 @@
 //! icon and Velopack updates.
 
 use std::sync::Mutex;
+use tauri::image::Image;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{App, AppHandle, Emitter, Manager, PhysicalPosition, Window, WindowEvent, Wry};
@@ -11,6 +12,8 @@ use crate::{updater, watcher};
 
 const TRAY_ID: &str = "checkst-tray";
 const DEFAULT_SHORTCUT: &str = "Ctrl+Alt+T";
+const WINDOW_ICON_FILE: &str = "app-icon-window.png";
+const TRAY_ICON_FILE: &str = "app-icon-tray.png";
 
 pub struct AppState {
     shortcut: Mutex<Option<String>>,
@@ -45,8 +48,13 @@ pub fn plugins(builder: tauri::Builder<Wry>) -> tauri::Builder<Wry> {
 pub fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let handle = app.handle().clone();
     let menu = build_tray_menu(&handle, "checkst öffnen", "Neue Aufgabe …", "Heute anheften", false, "Beenden")?;
+    // Start with the last accent icon, not the one in the exe (see `cached_icon`).
+    if let Some(icon) = cached_icon(&handle, WINDOW_ICON_FILE) {
+        let _ = set_window_icon(&handle, icon);
+    }
+    let tray_icon = cached_icon(&handle, TRAY_ICON_FILE).or_else(|| app.default_window_icon().cloned());
     TrayIconBuilder::with_id(TRAY_ID)
-        .icon(app.default_window_icon().cloned().expect("app icon"))
+        .icon(tray_icon.expect("app icon"))
         .tooltip("checkst")
         .menu(&menu)
         .show_menu_on_left_click(false)
@@ -211,20 +219,38 @@ pub fn set_tray_labels(app: AppHandle, open: String, new_task: String, pin: Stri
 }
 
 /// Replaces the taskbar (window) and tray icon, e.g. to follow the accent color.
+/// Both come in as PNG and are kept for the next start.
 #[tauri::command]
-pub fn set_app_icon(app: AppHandle, window_rgba: Vec<u8>, window_size: u32, tray_rgba: Vec<u8>, tray_size: u32) -> Result<(), String> {
-    use tauri::image::Image;
+pub fn set_app_icon(app: AppHandle, window_png: Vec<u8>, tray_png: Vec<u8>) -> Result<(), String> {
+    let window_icon = Image::from_bytes(&window_png).map_err(|e| e.to_string())?;
+    let tray_icon = Image::from_bytes(&tray_png).map_err(|e| e.to_string())?;
+    if let Ok(dir) = app.path().app_cache_dir() {
+        let _ = std::fs::create_dir_all(&dir);
+        let _ = std::fs::write(dir.join(WINDOW_ICON_FILE), &window_png);
+        let _ = std::fs::write(dir.join(TRAY_ICON_FILE), &tray_png);
+    }
+    set_window_icon(&app, window_icon)?;
+    if let Some(tray) = app.tray_by_id(TRAY_ID) {
+        tray.set_icon(Some(tray_icon)).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// The icon the UI sent last time. Right after a Windows restart the notification area may
+/// not be ready yet when the UI sends the icon: tray-icon then drops it and later re-adds the
+/// icon the tray was built with. So the tray has to be built with the right icon already.
+fn cached_icon(app: &AppHandle, file: &str) -> Option<Image<'static>> {
+    let bytes = std::fs::read(app.path().app_cache_dir().ok()?.join(file)).ok()?;
+    Image::from_bytes(&bytes).ok()
+}
+
+fn set_window_icon(app: &AppHandle, icon: Image<'_>) -> Result<(), String> {
     if let Some(w) = app.get_webview_window("main") {
         #[cfg(windows)]
         if let Ok(hwnd) = w.hwnd() {
-            crate::winicon::set_big_icon(hwnd.0 as isize, &window_rgba, window_size)?;
+            crate::winicon::set_big_icon(hwnd.0 as isize, icon.rgba(), icon.width())?;
         }
-        w.set_icon(Image::new_owned(window_rgba, window_size, window_size))
-            .map_err(|e| e.to_string())?;
-    }
-    if let Some(tray) = app.tray_by_id(TRAY_ID) {
-        tray.set_icon(Some(Image::new_owned(tray_rgba, tray_size, tray_size)))
-            .map_err(|e| e.to_string())?;
+        w.set_icon(icon).map_err(|e| e.to_string())?;
     }
     Ok(())
 }
